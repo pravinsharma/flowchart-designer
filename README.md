@@ -42,6 +42,7 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 - **Export as PNG**: High-quality raster image
 - **Export as JPG**: Compressed image format
 - **Export as SVG**: Scalable vector graphics (infinite resolution)
+- **Export as PDF**: Print-ready documents for sharing
 - **Export as JSON**: Save and load your work
 - **Save/Load**: Resume work on previous diagrams
 
@@ -144,13 +145,15 @@ Select any shape to see and edit:
 2. Your diagram is saved as a `.json` file
 3. Use "Load" button to open it later
 
-#### Export as Image
+#### Export Your Work
 1. Click "Export" button
 2. Choose format:
    - **PNG**: Raster image (good for screenshots)
    - **JPG**: Compressed raster (smaller file size)
    - **SVG**: Vector graphics (scalable, editable)
-3. Image is downloaded automatically
+   - **PDF**: Document format (print-ready, shareable)
+   - **JSON**: Save project (re-editable in this tool)
+3. File is downloaded automatically
 
 ## Use Cases
 
@@ -321,7 +324,7 @@ if (e.key === 'your-key') {
 - [x] Smart connectors that attach to shapes
 - [ ] Auto-routing for connectors (path finding)
 - [x] SVG export
-- [ ] PDF export
+- [x] PDF export
 - [ ] Templates library
 - [ ] Collaborative editing
 - [ ] Cloud save

@@ -155,6 +155,12 @@ class FlowchartApp {
             this.showNotification('Exported as SVG!');
         });
 
+        document.getElementById('exportPDF').addEventListener('click', () => {
+            this.canvas.exportAsPDF();
+            this.closeModal(exportModal);
+            this.showNotification('Exported as PDF!');
+        });
+
         document.getElementById('exportJSON').addEventListener('click', () => {
             this.canvas.exportAsJSON();
             this.closeModal(exportModal);

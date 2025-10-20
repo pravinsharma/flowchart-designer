@@ -1651,6 +1651,67 @@ class FlowchartCanvas {
         link.click();
         URL.revokeObjectURL(url);
     }
+    
+    exportAsPDF() {
+        // Check if jsPDF is available
+        if (typeof window.jspdf === 'undefined') {
+            alert('PDF export library not loaded. Please refresh the page.');
+            return;
+        }
+        
+        const padding = 20;
+        const bounds = this.getContentBounds();
+        
+        // Calculate dimensions in pixels
+        const contentWidth = bounds.maxX - bounds.minX + (padding * 2);
+        const contentHeight = bounds.maxY - bounds.minY + (padding * 2);
+        
+        // Create temporary canvas for export
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = contentWidth;
+        tempCanvas.height = contentHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Fill white background
+        tempCtx.fillStyle = 'white';
+        tempCtx.fillRect(0, 0, contentWidth, contentHeight);
+        
+        // Translate to account for offset and padding
+        tempCtx.translate(-bounds.minX + padding, -bounds.minY + padding);
+        
+        // Draw all shapes
+        this.shapes.forEach(shape => {
+            const wasSelected = shape.selected;
+            shape.selected = false; // Don't show selection handles
+            shape.draw(tempCtx);
+            shape.selected = wasSelected; // Restore selection state
+        });
+        
+        // Convert to image data
+        const imgData = tempCanvas.toDataURL('image/png');
+        
+        // Calculate PDF dimensions (A4 or custom)
+        const pxToMm = 0.264583; // Convert pixels to mm (96 DPI)
+        const pdfWidth = contentWidth * pxToMm;
+        const pdfHeight = contentHeight * pxToMm;
+        
+        // Determine orientation
+        const orientation = pdfWidth > pdfHeight ? 'landscape' : 'portrait';
+        
+        // Create PDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: orientation,
+            unit: 'mm',
+            format: [pdfWidth, pdfHeight]
+        });
+        
+        // Add image to PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        
+        // Download PDF
+        pdf.save('flowchart.pdf');
+    }
 
         loadFromJSON(json) {
         const data = JSON.parse(json);
