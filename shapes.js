@@ -568,6 +568,12 @@ class Arrow extends Shape {
         this.y = minY;
         this.width = maxX - minX;
         this.height = maxY - minY;
+        
+        // Update offsets for proper movement
+        this._offsetX1 = this.x1 - this.x;
+        this._offsetY1 = this.y1 - this.y;
+        this._offsetX2 = this.x2 - this.x;
+        this._offsetY2 = this.y2 - this.y;
     }
 
     // Update connections when shapes move

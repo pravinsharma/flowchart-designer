@@ -20,8 +20,10 @@ class FlowchartCanvas {
         this.isPanning = false;
         this.history = [];
         this.historyIndex = -1;
-        this.snapDistance = 15; // Distance for snapping to connection points
+                this.snapDistance = 15; // Distance for snapping to connection points
         this.hoveredShape = null; // Track hovered shape for showing connection points
+        this.hoveredConnector = null; // Track hovered connector for endpoint detection
+        this.hoveredShapeForHighlight = null; // Track any hovered shape for green highlighting
         this.inlineEditor = null; // Inline text editor element
         this.editingShape = null; // Shape currently being edited
         
@@ -56,8 +58,12 @@ class FlowchartCanvas {
         };
     }
 
-    handleMouseDown(e) {
+        handleMouseDown(e) {
         const pos = this.getMousePos(e);
+        
+        // Clear hovered highlights on mouse down
+        this.hoveredConnector = null;
+        this.hoveredShapeForHighlight = null;
         
         if (this.currentTool === 'pan') {
             this.isPanning = true;
@@ -106,6 +112,17 @@ class FlowchartCanvas {
                 };
                 
                 this.render();
+                return;
+            }
+            
+                        // Check if clicking near a connector endpoint (even if not selected)
+            const endpointClick = this.checkConnectorEndpointClick(pos.x, pos.y);
+            if (endpointClick) {
+                this.selectShape(endpointClick.connector);
+                this.isResizing = true;
+                this.resizeHandle = endpointClick.handleIndex;
+                this.dragStartX = pos.x;
+                this.dragStartY = pos.y;
                 return;
             }
             
@@ -205,9 +222,33 @@ class FlowchartCanvas {
                     this.render();
                 }
                 
-                // Update cursor based on what's under mouse
+                // Check if hovering near connector endpoint
+                const endpointHover = this.checkConnectorEndpointClick(pos.x, pos.y);
+                if (endpointHover) {
+                    this.canvas.style.cursor = 'move';
+                    // Update hoveredConnector and re-render to show highlight
+                    const needsUpdate = this.hoveredConnector !== endpointHover.connector || 
+                                       this.hoveredShapeForHighlight !== null;
+                    if (needsUpdate) {
+                        this.hoveredConnector = endpointHover.connector;
+                        this.hoveredShapeForHighlight = null; // Clear shape highlight
+                        this.render();
+                    }
+                    return;
+                }
+                
+                // Update cursor based on what's under mouse and add hover highlighting
                 const shape = this.getShapeAtPoint(pos.x, pos.y);
                 if (shape) {
+                    // Update hover highlight for shape
+                    const needsUpdate = this.hoveredShapeForHighlight !== shape || 
+                                       this.hoveredConnector !== null;
+                    if (needsUpdate) {
+                        this.hoveredShapeForHighlight = shape;
+                        this.hoveredConnector = null; // Clear connector highlight
+                        this.render();
+                    }
+                    
                     if (shape.selected) {
                         const handleIndex = shape.getHandleAtPoint(pos.x, pos.y);
                         if (handleIndex !== -1) {
@@ -220,6 +261,12 @@ class FlowchartCanvas {
                         this.canvas.style.cursor = 'pointer';
                     }
                 } else {
+                    // Clear hover highlights if no shape under mouse
+                    if (this.hoveredShapeForHighlight || this.hoveredConnector) {
+                        this.hoveredShapeForHighlight = null;
+                        this.hoveredConnector = null;
+                        this.render();
+                    }
                     this.canvas.style.cursor = 'default';
                 }
             }
@@ -364,9 +411,11 @@ class FlowchartCanvas {
             this.saveState();
         }
 
-        this.isDragging = false;
+                this.isDragging = false;
         this.isResizing = false;
         this.resizeHandle = -1;
+        this.hoveredConnector = null; // Clear on mouse up
+        this.hoveredShapeForHighlight = null;
         this.render();
     }
 
@@ -459,7 +508,7 @@ class FlowchartCanvas {
         return null;
     }
 
-    resizeShape(shape, handleIndex, x, y) {
+        resizeShape(shape, handleIndex, x, y) {
         const handles = shape.getHandles();
         const handle = handles[handleIndex];
         
@@ -473,52 +522,56 @@ class FlowchartCanvas {
                 shape.updateBoundingBox();
                 return;
             }
-            // Snap to connection points
-            const snapResult = this.findNearestConnectionPoint(x, y, shape);
-            if (snapResult) {
-                x = snapResult.point.x;
-                y = snapResult.point.y;
-                this.hoveredShape = snapResult.shape;
-                
-                // Set connection
-                if (handleIndex === 0) {
-                    shape.startConnection = {
-                        shapeId: snapResult.shape.id,
-                        position: snapResult.point.position
-                    };
-                } else if (handleIndex === 1) {
-                    shape.endConnection = {
-                        shapeId: snapResult.shape.id,
-                        position: snapResult.point.position
-                    };
-                }
-            } else {
-                this.hoveredShape = null;
-                // Clear connection
-                if (handleIndex === 0) {
-                    shape.startConnection = null;
-                } else if (handleIndex === 1) {
-                    shape.endConnection = null;
-                }
-            }
             
-            if (handleIndex === 0) {
-                shape.x1 = x;
-                shape.y1 = y;
-            } else if (handleIndex === 1) {
-                shape.x2 = x;
-                shape.y2 = y;
+            // For endpoint handles, always try to snap to connection points
+            const isStartHandle = handleIndex === 0;
+            const isEndHandle = handleIndex === 1;
+            
+            if (isStartHandle || isEndHandle) {
+                // Snap to connection points (allow reconnecting to any shape)
+                const snapResult = this.findNearestConnectionPoint(x, y, shape);
+                
+                if (snapResult) {
+                    // Snap to the connection point
+                    x = snapResult.point.x;
+                    y = snapResult.point.y;
+                    this.hoveredShape = snapResult.shape;
+                    
+                    // Update or create connection
+                    if (isStartHandle) {
+                        shape.startConnection = {
+                            shapeId: snapResult.shape.id,
+                            position: snapResult.point.position
+                        };
+                    } else if (isEndHandle) {
+                        shape.endConnection = {
+                            shapeId: snapResult.shape.id,
+                            position: snapResult.point.position
+                        };
+                    }
+                } else {
+                    // No snap - allow free positioning and clear connection
+                    this.hoveredShape = null;
+                    
+                    if (isStartHandle) {
+                        shape.startConnection = null;
+                    } else if (isEndHandle) {
+                        shape.endConnection = null;
+                    }
+                }
+                
+                // Update endpoint position
+                if (isStartHandle) {
+                    shape.x1 = x;
+                    shape.y1 = y;
+                } else if (isEndHandle) {
+                    shape.x2 = x;
+                    shape.y2 = y;
+                }
+                
+                // Update bounding box
+                shape.updateBoundingBox();
             }
-            // Update bounding box
-            shape.x = Math.min(shape.x1, shape.x2);
-            shape.y = Math.min(shape.y1, shape.y2);
-            shape.width = Math.abs(shape.x2 - shape.x1);
-            shape.height = Math.abs(shape.y2 - shape.y1);
-            // Update offsets
-            shape._offsetX1 = shape.x1 - shape.x;
-            shape._offsetY1 = shape.y1 - shape.y;
-            shape._offsetX2 = shape.x2 - shape.x;
-            shape._offsetY2 = shape.y2 - shape.y;
             return;
         }
         
@@ -596,9 +649,26 @@ class FlowchartCanvas {
             }
         }
         
-        // Draw green highlight on connector being resized if snapped
+                // Draw green highlight on connector being resized if snapped
         if (isResizingConnector && this.hoveredShape) {
             this.drawGreenConnector(this.selectedShape);
+        }
+        
+        // Draw green highlight on hovered connector (endpoint detection)
+        if (this.hoveredConnector && !this.isDragging && !this.isResizing) {
+            this.drawGreenConnector(this.hoveredConnector);
+        }
+        
+        // Draw green highlight on hovered shape
+        if (this.hoveredShapeForHighlight && !this.isDragging && !this.isResizing) {
+            // Don't highlight if it's already selected (has purple handles)
+            if (!this.hoveredShapeForHighlight.selected) {
+                if (this.hoveredShapeForHighlight instanceof Arrow || this.hoveredShapeForHighlight instanceof Line) {
+                    this.drawGreenConnector(this.hoveredShapeForHighlight);
+                } else {
+                    this.drawGreenHighlight(this.hoveredShapeForHighlight);
+                }
+            }
         }
         
         this.ctx.restore();
@@ -693,9 +763,11 @@ class FlowchartCanvas {
         this.ctx.restore();
     }
 
-    setTool(tool) {
+        setTool(tool) {
         this.currentTool = tool;
         this.currentShapeType = null;
+        this.hoveredConnector = null; // Clear when changing tools
+        this.hoveredShapeForHighlight = null;
         
         if (tool === 'pan') {
             this.canvas.style.cursor = 'grab';
@@ -758,7 +830,7 @@ class FlowchartCanvas {
         return nearest;
     }
     
-    // Check if point is very near to a connection point (tighter threshold for clicking)
+        // Check if point is very near to a connection point (tighter threshold for clicking)
     isNearConnectionPoint(x, y, connectionPoint) {
         const clickRadius = 8 / this.zoom; // 8 pixels in canvas space
         const distance = Math.sqrt(
@@ -766,6 +838,45 @@ class FlowchartCanvas {
             Math.pow(connectionPoint.y - y, 2)
         );
         return distance < clickRadius;
+    }
+
+    // Check if clicking near a connector endpoint (head or tail)
+    // Uses 20% of connector length from either end, with minimum radius fallback
+    checkConnectorEndpointClick(x, y) {
+        const minEndpointRadius = 12 / this.zoom; // Minimum 12 pixels in canvas space
+        const percentageThreshold = 0.20; // 20% of connector length
+        
+        // Check all connectors from top to bottom
+        for (let i = this.shapes.length - 1; i >= 0; i--) {
+            const shape = this.shapes[i];
+            if (!(shape instanceof Arrow || shape instanceof Line)) continue;
+            
+            // Calculate connector length
+            const connectorLength = Math.sqrt(
+                Math.pow(shape.x2 - shape.x1, 2) + Math.pow(shape.y2 - shape.y1, 2)
+            );
+            
+            // Use 20% of length or minimum radius, whichever is larger
+            const effectiveRadius = Math.max(minEndpointRadius, connectorLength * percentageThreshold);
+            
+            // Check start point (tail) - within 20% of length from start
+            const distToStart = Math.sqrt(
+                Math.pow(shape.x1 - x, 2) + Math.pow(shape.y1 - y, 2)
+            );
+            if (distToStart < effectiveRadius) {
+                return { connector: shape, endpoint: 'start', handleIndex: 0 };
+            }
+            
+            // Check end point (head) - within 20% of length from end
+            const distToEnd = Math.sqrt(
+                Math.pow(shape.x2 - x, 2) + Math.pow(shape.y2 - y, 2)
+            );
+            if (distToEnd < effectiveRadius) {
+                return { connector: shape, endpoint: 'end', handleIndex: 1 };
+            }
+        }
+        
+        return null;
     }
 
     // Update all connector connections
