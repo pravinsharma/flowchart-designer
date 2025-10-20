@@ -936,17 +936,86 @@ class FlowchartCanvas {
         window.app.updatePropertiesPanel(this.selectedShape);
     }
 
+    // Get bounds of all shapes
+    getContentBounds() {
+        if (this.shapes.length === 0) {
+            return { minX: 0, minY: 0, maxX: this.canvas.width, maxY: this.canvas.height };
+        }
+        
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        
+        this.shapes.forEach(shape => {
+            if (shape instanceof Arrow || shape instanceof Line) {
+                // For connectors, use x1, y1, x2, y2
+                minX = Math.min(minX, shape.x1, shape.x2);
+                minY = Math.min(minY, shape.y1, shape.y2);
+                maxX = Math.max(maxX, shape.x1, shape.x2);
+                maxY = Math.max(maxY, shape.y1, shape.y2);
+            } else {
+                minX = Math.min(minX, shape.x);
+                minY = Math.min(minY, shape.y);
+                maxX = Math.max(maxX, shape.x + shape.width);
+                maxY = Math.max(maxY, shape.y + shape.height);
+            }
+        });
+        
+        return { minX, minY, maxX, maxY };
+    }
+    
+    // Export with trimmed bounds
+    exportTrimmed(format = 'png') {
+        const padding = 20; // Add some padding around content
+        const bounds = this.getContentBounds();
+        
+        // Calculate dimensions
+        const contentWidth = bounds.maxX - bounds.minX + (padding * 2);
+        const contentHeight = bounds.maxY - bounds.minY + (padding * 2);
+        
+        // Create temporary canvas
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = contentWidth;
+        tempCanvas.height = contentHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        // Fill white background for JPG
+        if (format === 'jpeg') {
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, contentWidth, contentHeight);
+        }
+        
+        // Translate to account for offset and padding
+        tempCtx.translate(-bounds.minX + padding, -bounds.minY + padding);
+        
+        // Draw all shapes
+        this.shapes.forEach(shape => {
+            shape.selected = false; // Don't show selection handles in export
+            shape.draw(tempCtx);
+        });
+        
+        // Restore selection state
+        if (this.selectedShape) {
+            this.selectedShape.selected = true;
+        }
+        
+        return tempCanvas;
+    }
+
     exportAsPNG() {
+        const tempCanvas = this.exportTrimmed('png');
         const link = document.createElement('a');
         link.download = 'flowchart.png';
-        link.href = this.canvas.toDataURL();
+        link.href = tempCanvas.toDataURL('image/png');
         link.click();
     }
 
     exportAsJPG() {
+        const tempCanvas = this.exportTrimmed('jpeg');
         const link = document.createElement('a');
         link.download = 'flowchart.jpg';
-        link.href = this.canvas.toDataURL('image/jpeg');
+        link.href = tempCanvas.toDataURL('image/jpeg', 0.95);
         link.click();
     }
 
