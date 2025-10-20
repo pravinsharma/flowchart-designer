@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flowchart Designer</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1><i class="fas fa-project-diagram"></i> Flowchart Designer</h1>
+            </div>
+            <div class="header-center">
+                <div class="toolbar">
+                    <button id="selectBtn" class="tool-btn active" title="Select (V)">
+                        <i class="fas fa-mouse-pointer"></i>
+                    </button>
+                    <button id="panBtn" class="tool-btn" title="Pan (H)">
+                        <i class="fas fa-hand-paper"></i>
+                    </button>
+                    <span class="separator"></span>
+                    <button id="zoomInBtn" class="tool-btn" title="Zoom In (+)">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button id="zoomOutBtn" class="tool-btn" title="Zoom Out (-)">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button id="zoomResetBtn" class="tool-btn" title="Reset Zoom (0)">
+                        <i class="fas fa-compress"></i>
+                    </button>
+                    <span class="zoom-level" id="zoomLevel">100%</span>
+                    <span class="separator"></span>
+                    <button id="undoBtn" class="tool-btn" title="Undo (Ctrl+Z)">
+                        <i class="fas fa-undo"></i>
+                    </button>
+                    <button id="redoBtn" class="tool-btn" title="Redo (Ctrl+Y)">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <span class="separator"></span>
+                    <button id="deleteBtn" class="tool-btn" title="Delete (Del)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button id="clearBtn" class="tool-btn" title="Clear All">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="exportBtn" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button id="saveBtn" class="btn btn-secondary">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button id="loadBtn" class="btn btn-secondary">
+                    <i class="fas fa-folder-open"></i> Load
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Palette -->
+            <aside class="palette">
+                <div class="palette-header">
+                    <h3>Shapes</h3>
+                </div>
+                <div class="palette-content">
+                    <!-- Basic Shapes -->
+                    <div class="palette-section">
+                        <h4>Basic Shapes</h4>
+                        <div class="shape-grid">
+                            <div class="shape-item" data-shape="rectangle" title="Rectangle">
+                                <div class="shape-preview rectangle-preview"></div>
+                                <span>Rectangle</span>
+                            </div>
+                            <div class="shape-item" data-shape="rounded" title="Rounded Rectangle">
+                                <div class="shape-preview rounded-preview"></div>
+                                <span>Rounded</span>
+                            </div>
+                            <div class="shape-item" data-shape="circle" title="Circle">
+                                <div class="shape-preview circle-preview"></div>
+                                <span>Circle</span>
+                            </div>
+                            <div class="shape-item" data-shape="diamond" title="Diamond">
+                                <div class="shape-preview diamond-preview"></div>
+                                <span>Diamond</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Flowchart Shapes -->
+                    <div class="palette-section">
+                        <h4>Flowchart</h4>
+                        <div class="shape-grid">
+                            <div class="shape-item" data-shape="process" title="Process">
+                                <div class="shape-preview rectangle-preview"></div>
+                                <span>Process</span>
+                            </div>
+                            <div class="shape-item" data-shape="decision" title="Decision">
+                                <div class="shape-preview diamond-preview"></div>
+                                <span>Decision</span>
+                            </div>
+                            <div class="shape-item" data-shape="terminator" title="Terminator">
+                                <div class="shape-preview rounded-preview"></div>
+                                <span>Terminator</span>
+                            </div>
+                            <div class="shape-item" data-shape="data" title="Data/Input">
+                                <div class="shape-preview parallelogram-preview"></div>
+                                <span>Data</span>
+                            </div>
+                            <div class="shape-item" data-shape="document" title="Document">
+                                <div class="shape-preview document-preview"></div>
+                                <span>Document</span>
+                            </div>
+                            <div class="shape-item" data-shape="database" title="Database">
+                                <div class="shape-preview database-preview"></div>
+                                <span>Database</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connectors -->
+                    <div class="palette-section">
+                        <h4>Connectors</h4>
+                        <div class="shape-grid">
+                            <div class="shape-item" data-shape="arrow" title="Arrow">
+                                <div class="shape-preview arrow-preview"></div>
+                                <span>Arrow</span>
+                            </div>
+                            <div class="shape-item" data-shape="line" title="Line">
+                                <div class="shape-preview line-preview"></div>
+                                <span>Line</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text -->
+                    <div class="palette-section">
+                        <h4>Text</h4>
+                        <div class="shape-grid">
+                            <div class="shape-item" data-shape="text" title="Text Box">
+                                <div class="shape-preview text-preview">
+                                    <i class="fas fa-font"></i>
+                                </div>
+                                <span>Text</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Canvas Area -->
+            <main class="canvas-area">
+                <canvas id="flowchartCanvas"></canvas>
+            </main>
+
+            <!-- Properties Panel -->
+            <aside class="properties-panel" id="propertiesPanel">
+                <div class="properties-header">
+                    <h3>Properties</h3>
+                    <button id="closePropsBtn" class="close-btn">×</button>
+                </div>
+                <div class="properties-content" id="propertiesContent">
+                    <div class="no-selection">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Select a shape to edit properties</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Context Menu -->
+        <div id="contextMenu" class="context-menu">
+            <div class="context-item" id="ctxEdit">
+                <i class="fas fa-edit"></i> Edit Text
+            </div>
+            <div class="context-item" id="ctxDuplicate">
+                <i class="fas fa-copy"></i> Duplicate
+            </div>
+            <div class="context-item" id="ctxBringFront">
+                <i class="fas fa-arrow-up"></i> Bring to Front
+            </div>
+            <div class="context-item" id="ctxSendBack">
+                <i class="fas fa-arrow-down"></i> Send to Back
+            </div>
+            <div class="context-divider"></div>
+            <div class="context-item" id="ctxDelete">
+                <i class="fas fa-trash"></i> Delete
+            </div>
+        </div>
+    </div>
+
+    <!-- Text Edit Modal -->
+    <div id="textModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Text</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="textInput" placeholder="Enter text..."></textarea>
+                <div class="text-options">
+                    <label>Font Size:</label>
+                    <input type="number" id="textSize" value="14" min="8" max="72">
+                    <label>Font:</label>
+                    <select id="textFont">
+                        <option value="Arial">Arial</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Verdana">Verdana</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="textCancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="textOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Export Flowchart</h3>
+                <button class="modal-close">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <button class="btn btn-block" id="exportPNG">
+                        <i class="fas fa-image"></i> Export as PNG
+                    </button>
+                    <button class="btn btn-block" id="exportJPG">
+                        <i class="fas fa-image"></i> Export as JPG
+                    </button>
+                    <button class="btn btn-block" id="exportSVG">
+                        <i class="fas fa-vector-square"></i> Export as SVG
+                    </button>
+                    <button class="btn btn-block" id="exportJSON">
+                        <i class="fas fa-file-code"></i> Export as JSON
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="loadFileInput" accept=".json" style="display: none;">
+
+    <script src="shapes.js"></script>
+    <script src="canvas.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

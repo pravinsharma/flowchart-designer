@@ -1,0 +1,22 @@
+{
+  "name": "flowchart-designer",
+  "version": "1.0.0",
+  "description": "Professional flowchart diagramming tool with HTML5 Canvas",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 8000 -o",
+    "serve": "npx http-server -p 8000"
+  },
+  "keywords": [
+    "flowchart",
+    "diagram",
+    "canvas",
+    "html5",
+    "drawing",
+    "designer",
+    "visual",
+    "modeling"
+  ],
+  "author": "",
+  "license": "MIT"
+}
