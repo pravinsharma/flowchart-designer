@@ -108,6 +108,35 @@ class Shape {
         return -1;
     }
 
+    // Get connection points for snapping connectors
+    getConnectionPoints() {
+        return [
+            { x: this.x + this.width / 2, y: this.y, position: 'top' },                    // Top
+            { x: this.x + this.width, y: this.y + this.height / 2, position: 'right' },    // Right
+            { x: this.x + this.width / 2, y: this.y + this.height, position: 'bottom' },   // Bottom
+            { x: this.x, y: this.y + this.height / 2, position: 'left' },                  // Left
+            { x: this.x + this.width, y: this.y, position: 'top-right' },                  // Top-right
+            { x: this.x, y: this.y, position: 'top-left' },                                // Top-left
+            { x: this.x + this.width, y: this.y + this.height, position: 'bottom-right' }, // Bottom-right
+            { x: this.x, y: this.y + this.height, position: 'bottom-left' }                // Bottom-left
+        ];
+    }
+
+    // Draw connection points when hovered/selected
+    drawConnectionPoints(ctx) {
+        const points = this.getConnectionPoints();
+        ctx.fillStyle = '#667eea';
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        
+        points.forEach(point => {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+    }
+
     toJSON() {
         return {
             type: this.constructor.name,
@@ -291,6 +320,9 @@ class Arrow extends Shape {
         this._offsetY1 = y1 - this.y;
         this._offsetX2 = x2 - this.x;
         this._offsetY2 = y2 - this.y;
+        // Connection tracking
+        this.startConnection = null; // { shapeId, position }
+        this.endConnection = null;   // { shapeId, position }
     }
 
     // Override getHandles to use x1, y1, x2, y2
@@ -370,12 +402,47 @@ class Arrow extends Shape {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
+    // Update connections when shapes move
+    updateConnections(shapes) {
+        if (this.startConnection) {
+            const shape = shapes.find(s => s.id === this.startConnection.shapeId);
+            if (shape) {
+                const point = shape.getConnectionPoints().find(p => p.position === this.startConnection.position);
+                if (point) {
+                    this.x1 = point.x;
+                    this.y1 = point.y;
+                }
+            }
+        }
+        if (this.endConnection) {
+            const shape = shapes.find(s => s.id === this.endConnection.shapeId);
+            if (shape) {
+                const point = shape.getConnectionPoints().find(p => p.position === this.endConnection.position);
+                if (point) {
+                    this.x2 = point.x;
+                    this.y2 = point.y;
+                }
+            }
+        }
+        // Update bounding box
+        this.x = Math.min(this.x1, this.x2);
+        this.y = Math.min(this.y1, this.y2);
+        this.width = Math.abs(this.x2 - this.x1);
+        this.height = Math.abs(this.y2 - this.y1);
+        this._offsetX1 = this.x1 - this.x;
+        this._offsetY1 = this.y1 - this.y;
+        this._offsetX2 = this.x2 - this.x;
+        this._offsetY2 = this.y2 - this.y;
+    }
+
     toJSON() {
         const json = super.toJSON();
         json.x1 = this.x1;
         json.y1 = this.y1;
         json.x2 = this.x2;
         json.y2 = this.y2;
+        json.startConnection = this.startConnection;
+        json.endConnection = this.endConnection;
         return json;
     }
 }

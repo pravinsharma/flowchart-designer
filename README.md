@@ -24,6 +24,8 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 - **Double-click**: Edit text on any shape
 - **Right-click Menu**: Quick access to common actions
 - **Properties Panel**: Real-time property editing
+- **Smart Connectors**: Arrows and lines snap to connection points
+- **Persistent Connections**: Connectors stay attached when shapes move
 
 ### 🎨 Customization
 - Fill color
@@ -99,7 +101,11 @@ Then visit `http://localhost:8000`
 #### Using Connectors
 1. Click on "Arrow" or "Line" in the palette
 2. Click and drag from start point to end point
-3. Release to create the connector
+3. **Connection Points**: When near a shape, blue connection points appear
+4. **Snap to Connect**: Drag connector endpoint near a connection point to snap
+5. Release to create the connector
+6. **Stay Connected**: When you move a connected shape, connectors automatically follow
+7. **Reconnect**: Drag connector endpoints to different connection points anytime
 
 ### 3. Navigation
 - **Pan**: Click the pan tool (hand icon) or press `H`, then drag the canvas
@@ -172,6 +178,7 @@ Select any shape to see and edit:
 - Smart redraw on changes only
 - Handles hundreds of shapes smoothly
 - Zoom and pan with hardware acceleration
+- Real-time connector snapping with minimal overhead
 
 ## File Structure
 
@@ -251,6 +258,7 @@ if (e.key === 'your-key') {
 
 ### 1. Precise Positioning
 - Use the properties panel to enter exact X, Y coordinates
+- Connector snapping to connection points (15px snap distance)
 - Grid snapping (coming soon)
 
 ### 2. Quick Duplication
@@ -271,6 +279,12 @@ if (e.key === 'your-key') {
 - Use appropriate fonts and sizes
 - Keep adequate spacing
 
+### 6. Working with Connectors
+- **8 Connection Points**: Each shape has 8 connection points (top, right, bottom, left, and corners)
+- **Visual Feedback**: Connection points light up when you're close enough to snap
+- **Smart Movement**: Connected shapes automatically update connector positions
+- **Flexible Editing**: Drag connector endpoints to reconnect to different shapes
+
 ## Known Limitations
 
 - SVG export not yet implemented (coming soon)
@@ -278,6 +292,7 @@ if (e.key === 'your-key') {
 - No shape grouping (coming soon)
 - No auto-routing for connectors (coming soon)
 - No grid snapping (coming soon)
+- Connectors don't avoid overlapping shapes (manual routing)
 
 ## Future Enhancements
 
@@ -287,8 +302,8 @@ if (e.key === 'your-key') {
 - [ ] Alignment tools (align left, center, right, etc.)
 - [ ] Distribution tools (space evenly)
 - [ ] Grid snapping and guidelines
-- [ ] Smart connectors that attach to shapes
-- [ ] Auto-routing for connectors
+- [x] Smart connectors that attach to shapes
+- [ ] Auto-routing for connectors (path finding)
 - [ ] SVG export
 - [ ] PDF export
 - [ ] Templates library

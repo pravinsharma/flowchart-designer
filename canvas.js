@@ -20,6 +20,8 @@ class FlowchartCanvas {
         this.isPanning = false;
         this.history = [];
         this.historyIndex = -1;
+        this.snapDistance = 15; // Distance for snapping to connection points
+        this.hoveredShape = null; // Track hovered shape for showing connection points
         
         this.init();
     }
@@ -124,6 +126,8 @@ class FlowchartCanvas {
                 if (this.selectedShape.updateEndpoints) {
                     this.selectedShape.updateEndpoints();
                 }
+                // Update all connector connections when shapes move
+                this.updateAllConnections();
                 this.render();
             } else {
                 // Update cursor based on what's under mouse
@@ -149,6 +153,17 @@ class FlowchartCanvas {
             if (this.currentShapeType === 'arrow' || this.currentShapeType === 'line') {
                 this.drawingShape.x2 = pos.x;
                 this.drawingShape.y2 = pos.y;
+                
+                // Snap endpoint to connection points
+                const snapResult = this.findNearestConnectionPoint(pos.x, pos.y, this.drawingShape);
+                if (snapResult) {
+                    this.drawingShape.x2 = snapResult.point.x;
+                    this.drawingShape.y2 = snapResult.point.y;
+                    this.hoveredShape = snapResult.shape;
+                } else {
+                    this.hoveredShape = null;
+                }
+                
                 this.drawingShape.x = Math.min(this.drawingShape.x1, this.drawingShape.x2);
                 this.drawingShape.y = Math.min(this.drawingShape.y1, this.drawingShape.y2);
                 this.drawingShape.width = Math.abs(this.drawingShape.x2 - this.drawingShape.x1);
@@ -181,12 +196,23 @@ class FlowchartCanvas {
 
         if (this.isDragging && this.drawingShape) {
             if (this.drawingShape.width > 10 && this.drawingShape.height > 10) {
+                // Set end connection if snapped
+                if (this.hoveredShape && (this.drawingShape instanceof Arrow || this.drawingShape instanceof Line)) {
+                    const snapResult = this.findNearestConnectionPoint(this.drawingShape.x2, this.drawingShape.y2, this.drawingShape);
+                    if (snapResult) {
+                        this.drawingShape.endConnection = {
+                            shapeId: snapResult.shape.id,
+                            position: snapResult.point.position
+                        };
+                    }
+                }
                 this.addShape(this.drawingShape);
                 this.selectShape(this.drawingShape);
                 this.saveState();
             }
             this.drawingShape = null;
             this.currentShapeType = null;
+            this.hoveredShape = null;
         } else if (this.isDragging || this.isResizing) {
             this.saveState();
         }
@@ -292,6 +318,35 @@ class FlowchartCanvas {
         
         // Handle Arrow/Line differently (they have only 2 handles)
         if (shape instanceof Arrow || shape instanceof Line) {
+            // Snap to connection points
+            const snapResult = this.findNearestConnectionPoint(x, y, shape);
+            if (snapResult) {
+                x = snapResult.point.x;
+                y = snapResult.point.y;
+                this.hoveredShape = snapResult.shape;
+                
+                // Set connection
+                if (handleIndex === 0) {
+                    shape.startConnection = {
+                        shapeId: snapResult.shape.id,
+                        position: snapResult.point.position
+                    };
+                } else if (handleIndex === 1) {
+                    shape.endConnection = {
+                        shapeId: snapResult.shape.id,
+                        position: snapResult.point.position
+                    };
+                }
+            } else {
+                this.hoveredShape = null;
+                // Clear connection
+                if (handleIndex === 0) {
+                    shape.startConnection = null;
+                } else if (handleIndex === 1) {
+                    shape.endConnection = null;
+                }
+            }
+            
             if (handleIndex === 0) {
                 shape.x1 = x;
                 shape.y1 = y;
@@ -364,6 +419,12 @@ class FlowchartCanvas {
         // Draw all shapes
         this.shapes.forEach(shape => shape.draw(this.ctx));
         
+        // Draw connection points on hovered shape
+        if (this.hoveredShape && (this.currentShapeType === 'arrow' || this.currentShapeType === 'line' || 
+            (this.isResizing && this.selectedShape && (this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)))) {
+            this.hoveredShape.drawConnectionPoints(this.ctx);
+        }
+        
         // Draw shape being created
         if (this.drawingShape) {
             this.drawingShape.draw(this.ctx);
@@ -414,6 +475,36 @@ class FlowchartCanvas {
         if (zoomLevel) {
             zoomLevel.textContent = Math.round(this.zoom * 100) + '%';
         }
+    }
+
+    // Find nearest connection point within snap distance
+    findNearestConnectionPoint(x, y, excludeShape) {
+        let nearest = null;
+        let minDistance = this.snapDistance;
+        
+        for (const shape of this.shapes) {
+            if (shape === excludeShape || shape instanceof Arrow || shape instanceof Line) continue;
+            
+            const points = shape.getConnectionPoints();
+            for (const point of points) {
+                const distance = Math.sqrt(Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2));
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearest = { shape, point };
+                }
+            }
+        }
+        
+        return nearest;
+    }
+
+    // Update all connector connections
+    updateAllConnections() {
+        this.shapes.forEach(shape => {
+            if (shape instanceof Arrow || shape instanceof Line) {
+                shape.updateConnections(this.shapes);
+            }
+        });
     }
 
     deleteSelected() {
@@ -530,6 +621,12 @@ class FlowchartCanvas {
         }
         
         Object.assign(shape, json);
+        // Restore connections for Arrow/Line
+        if ((json.type === 'Arrow' || json.type === 'Line') && (json.startConnection || json.endConnection)) {
+            shape.startConnection = json.startConnection;
+            shape.endConnection = json.endConnection;
+            shape.updateConnections(this.shapes);
+        }
         return shape;
     }
 
