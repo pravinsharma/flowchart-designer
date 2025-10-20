@@ -208,6 +208,43 @@ class Circle extends Shape {
         const dy = y - centerY;
         return dx * dx + dy * dy <= radius * radius;
     }
+
+    // Override connection points to be on circle perimeter
+    getConnectionPoints() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const radius = Math.min(this.width, this.height) / 2;
+        
+        // Calculate points on circle perimeter at key angles
+        const angles = [0, 45, 90, 135, 180, 225, 270, 315]; // degrees
+        return angles.map(deg => {
+            const rad = (deg * Math.PI) / 180;
+            return {
+                x: centerX + radius * Math.cos(rad),
+                y: centerY + radius * Math.sin(rad),
+                position: `${deg}deg`
+            };
+        });
+    }
+
+    // Override handles to be on circle perimeter
+    getHandles() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const radius = Math.min(this.width, this.height) / 2;
+        
+        // 8 resize handles on the circle perimeter
+        return [
+            { x: centerX, y: centerY - radius, cursor: 'n-resize' },           // Top
+            { x: centerX + radius * 0.707, y: centerY - radius * 0.707, cursor: 'ne-resize' }, // Top-right
+            { x: centerX + radius, y: centerY, cursor: 'e-resize' },           // Right
+            { x: centerX + radius * 0.707, y: centerY + radius * 0.707, cursor: 'se-resize' }, // Bottom-right
+            { x: centerX, y: centerY + radius, cursor: 's-resize' },           // Bottom
+            { x: centerX - radius * 0.707, y: centerY + radius * 0.707, cursor: 'sw-resize' }, // Bottom-left
+            { x: centerX - radius, y: centerY, cursor: 'w-resize' },           // Left
+            { x: centerX - radius * 0.707, y: centerY - radius * 0.707, cursor: 'nw-resize' }  // Top-left
+        ];
+    }
 }
 
 class Diamond extends Shape {
@@ -233,6 +270,44 @@ class Diamond extends Shape {
         const dx = Math.abs(x - centerX);
         const dy = Math.abs(y - centerY);
         return dx / (this.width / 2) + dy / (this.height / 2) <= 1;
+    }
+
+    // Override connection points to be on diamond edges
+    getConnectionPoints() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const halfWidth = this.width / 2;
+        const halfHeight = this.height / 2;
+        
+        return [
+            // Primary points (4 vertices)
+            { x: centerX, y: this.y, position: 'top' },
+            { x: this.x + this.width, y: centerY, position: 'right' },
+            { x: centerX, y: this.y + this.height, position: 'bottom' },
+            { x: this.x, y: centerY, position: 'left' },
+            // Mid-edge points (4 edges)
+            { x: centerX + halfWidth / 2, y: centerY - halfHeight / 2, position: 'top-right' },
+            { x: centerX + halfWidth / 2, y: centerY + halfHeight / 2, position: 'bottom-right' },
+            { x: centerX - halfWidth / 2, y: centerY + halfHeight / 2, position: 'bottom-left' },
+            { x: centerX - halfWidth / 2, y: centerY - halfHeight / 2, position: 'top-left' }
+        ];
+    }
+
+    // Override handles to be on diamond vertices
+    getHandles() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        
+        return [
+            { x: centerX, y: this.y, cursor: 'n-resize' },
+            { x: centerX + this.width * 0.35, y: centerY - this.height * 0.35, cursor: 'ne-resize' },
+            { x: this.x + this.width, y: centerY, cursor: 'e-resize' },
+            { x: centerX + this.width * 0.35, y: centerY + this.height * 0.35, cursor: 'se-resize' },
+            { x: centerX, y: this.y + this.height, cursor: 's-resize' },
+            { x: centerX - this.width * 0.35, y: centerY + this.height * 0.35, cursor: 'sw-resize' },
+            { x: this.x, y: centerY, cursor: 'w-resize' },
+            { x: centerX - this.width * 0.35, y: centerY - this.height * 0.35, cursor: 'nw-resize' }
+        ];
     }
 }
 
