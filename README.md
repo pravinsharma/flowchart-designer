@@ -14,6 +14,7 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 - **Select Tool (V)**: Select, move, and resize shapes
 - **Pan Tool (H)**: Pan around the canvas
 - **Zoom Controls**: Zoom in (+), Zoom out (-), Reset (0)
+- **Grid & Snapping (G/S/L)**: Visual grid, snap to grid, alignment guidelines
 - **Undo/Redo (Ctrl+Z/Ctrl+Y)**: Full history support
 - **Delete (Del)**: Remove selected shapes
 
@@ -21,6 +22,8 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 - **Drag & Drop**: Add shapes from palette to canvas
 - **Resize**: Drag handles to resize shapes
 - **Move**: Click and drag to reposition
+- **Grid Snapping**: Automatically align shapes to grid intersections
+- **Alignment Guidelines**: Visual guides show when shapes align perfectly
 - **Double-click**: Edit text on any shape
 - **Right-click Menu**: Quick access to common actions
 - **Properties Panel**: Real-time property editing
@@ -43,6 +46,9 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 ### ⌨️ Keyboard Shortcuts
 - `V` - Select tool
 - `H` - Pan tool
+- `G` - Toggle grid
+- `S` - Toggle snap to grid
+- `L` - Toggle alignment guidelines
 - `+` / `=` - Zoom in
 - `-` / `_` - Zoom out
 - `0` - Reset zoom
@@ -259,15 +265,19 @@ if (e.key === 'your-key') {
 ### 1. Precise Positioning
 - Use the properties panel to enter exact X, Y coordinates
 - Connector snapping to connection points (15px snap distance)
-- Grid snapping (coming soon)
+- Grid snapping for perfect alignment (toggle with G key)
+- Alignment guidelines for multi-shape layouts (toggle with L key)
 
 ### 2. Quick Duplication
 - Right-click → Duplicate
 - Or copy the shape using Ctrl+C / Ctrl+V (coming soon)
 
 ### 3. Alignment
+- Use grid snapping (G) for consistent spacing
+- Enable guidelines (L) for automatic alignment detection
+- Visual magenta lines show alignment opportunities
 - Select multiple shapes (coming soon)
-- Use alignment tools (coming soon)
+- Advanced alignment tools (coming soon)
 
 ### 4. Templates
 - Save common diagrams as JSON
@@ -291,7 +301,6 @@ if (e.key === 'your-key') {
 - No multi-select yet (coming soon)
 - No shape grouping (coming soon)
 - No auto-routing for connectors (coming soon)
-- No grid snapping (coming soon)
 - Connectors don't avoid overlapping shapes (manual routing)
 
 ## Future Enhancements
@@ -301,7 +310,7 @@ if (e.key === 'your-key') {
 - [ ] Shape grouping and ungrouping
 - [ ] Alignment tools (align left, center, right, etc.)
 - [ ] Distribution tools (space evenly)
-- [ ] Grid snapping and guidelines
+- [x] Grid snapping and guidelines
 - [x] Smart connectors that attach to shapes
 - [ ] Auto-routing for connectors (path finding)
 - [ ] SVG export
