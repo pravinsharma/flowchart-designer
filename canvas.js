@@ -22,6 +22,8 @@ class FlowchartCanvas {
         this.historyIndex = -1;
         this.snapDistance = 15; // Distance for snapping to connection points
         this.hoveredShape = null; // Track hovered shape for showing connection points
+        this.inlineEditor = null; // Inline text editor element
+        this.editingShape = null; // Shape currently being edited
         
         this.init();
     }
@@ -670,7 +672,107 @@ class FlowchartCanvas {
     }
 
     editShapeText(shape) {
-        window.app.showTextModal(shape);
+        // Create inline editor
+        this.editingShape = shape;
+        
+        // Remove existing editor if any
+        if (this.inlineEditor) {
+            this.closeInlineEditor();
+        }
+        
+        // Create editor element
+        this.inlineEditor = document.createElement('div');
+        this.inlineEditor.contentEditable = 'true';
+        this.inlineEditor.className = 'inline-text-editor';
+        this.inlineEditor.textContent = shape.text || '';
+        
+        // Position the editor
+        const rect = this.canvas.getBoundingClientRect();
+        const editorX = rect.left + (shape.x + shape.width / 2) * this.zoom + this.panX;
+        const editorY = rect.top + (shape.y + shape.height / 2) * this.zoom + this.panY;
+        
+        this.inlineEditor.style.cssText = `
+            position: fixed;
+            left: ${editorX}px;
+            top: ${editorY}px;
+            transform: translate(-50%, -50%);
+            min-width: ${Math.max(shape.width * this.zoom, 100)}px;
+            max-width: ${shape.width * this.zoom * 1.5}px;
+            padding: 8px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            font-size: ${shape.fontSize * this.zoom}px;
+            font-family: ${shape.fontFamily};
+            color: ${shape.textColor};
+            text-align: center;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 10000;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        `;
+        
+        document.body.appendChild(this.inlineEditor);
+        
+        // Focus and select all text
+        this.inlineEditor.focus();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(this.inlineEditor);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        // Handle clicks outside to close
+        const closeOnClickOutside = (e) => {
+            if (!this.inlineEditor.contains(e.target)) {
+                this.closeInlineEditor();
+                document.removeEventListener('mousedown', closeOnClickOutside);
+            }
+        };
+        
+        setTimeout(() => {
+            document.addEventListener('mousedown', closeOnClickOutside);
+        }, 100);
+        
+        // Handle Enter and Escape keys
+        this.inlineEditor.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                this.closeInlineEditor(false); // Don't save
+                document.removeEventListener('mousedown', closeOnClickOutside);
+            } else if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.closeInlineEditor();
+                document.removeEventListener('mousedown', closeOnClickOutside);
+            }
+        });
+        
+        // Handle input to allow Shift+Enter for new lines
+        this.inlineEditor.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.shiftKey) {
+                // Allow default behavior for Shift+Enter (new line)
+            }
+        });
+    }
+    
+    closeInlineEditor(save = true) {
+        if (!this.inlineEditor) return;
+        
+        if (save && this.editingShape) {
+            const newText = this.inlineEditor.textContent.trim();
+            if (this.editingShape.text !== newText) {
+                this.editingShape.text = newText;
+                this.saveState();
+                this.render();
+                this.updatePropertiesPanel();
+            }
+        }
+        
+        this.inlineEditor.remove();
+        this.inlineEditor = null;
+        this.editingShape = null;
     }
 
     updatePropertiesPanel() {

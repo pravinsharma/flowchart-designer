@@ -612,6 +612,35 @@ body {
     background: #999;
 }
 
+/* Inline Text Editor */
+.inline-text-editor {
+    position: fixed;
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 4px;
+    padding: 8px;
+    outline: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    min-width: 100px;
+    text-align: center;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.4;
+}
+
+.inline-text-editor:focus {
+    border-color: #764ba2;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.inline-text-editor:empty:before {
+    content: 'Type text here...';
+    color: #999;
+    font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .palette {
