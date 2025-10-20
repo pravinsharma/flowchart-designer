@@ -20,8 +20,9 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 
 ### 🎯 Editing Features
 - **Drag & Drop**: Add shapes from palette to canvas
+- **Multi-Select**: Shift+Click to select multiple shapes, Ctrl+A for all
 - **Resize**: Drag handles to resize shapes
-- **Move**: Click and drag to reposition
+- **Move**: Click and drag to reposition (works with multiple selections)
 - **Grid Snapping**: Automatically align shapes to grid intersections
 - **Alignment Guidelines**: Visual guides show when shapes align perfectly
 - **Double-click**: Edit text on any shape
@@ -49,10 +50,12 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 - `G` - Toggle grid
 - `S` - Toggle snap to grid
 - `L` - Toggle alignment guidelines
+- `Shift+Click` - Multi-select shapes
+- `Ctrl+A` - Select all shapes
 - `+` / `=` - Zoom in
 - `-` / `_` - Zoom out
 - `0` - Reset zoom
-- `Delete` - Delete selected shape
+- `Delete` - Delete selected shape(s)
 - `Ctrl+Z` - Undo
 - `Ctrl+Y` / `Ctrl+Shift+Z` - Redo
 - `Esc` - Deselect / Cancel current action
@@ -298,15 +301,15 @@ if (e.key === 'your-key') {
 ## Known Limitations
 
 - SVG export not yet implemented (coming soon)
-- No multi-select yet (coming soon)
 - No shape grouping (coming soon)
 - No auto-routing for connectors (coming soon)
+- Cannot resize multiple shapes simultaneously (single shape only)
 - Connectors don't avoid overlapping shapes (manual routing)
 
 ## Future Enhancements
 
 ### Planned Features
-- [ ] Multi-select with Shift+Click
+- [x] Multi-select with Shift+Click
 - [ ] Shape grouping and ungrouping
 - [ ] Alignment tools (align left, center, right, etc.)
 - [ ] Distribution tools (space evenly)

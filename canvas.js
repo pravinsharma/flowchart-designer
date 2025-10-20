@@ -2,10 +2,11 @@
 
 class FlowchartCanvas {
     constructor(canvasId) {
-        this.canvas = document.getElementById(canvasId);
+                this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
         this.shapes = [];
-        this.selectedShape = null;
+        this.selectedShape = null; // Keep for backward compatibility
+        this.selectedShapes = []; // Array of selected shapes for multi-select
         this.isDragging = false;
         this.isResizing = false;
         this.resizeHandle = -1;
@@ -151,12 +152,33 @@ class FlowchartCanvas {
             // Check if clicking on a shape
             const clickedShape = this.getShapeAtPoint(pos.x, pos.y);
             if (clickedShape) {
-                this.selectShape(clickedShape);
-                this.isDragging = true;
-                this.dragStartX = pos.x - clickedShape.x;
-                this.dragStartY = pos.y - clickedShape.y;
+                // Shift+Click for multi-select
+                if (e.shiftKey) {
+                    this.toggleShapeSelection(clickedShape);
+                } else {
+                    // Regular click - check if clicking on already selected shape
+                    if (!clickedShape.selected) {
+                        this.selectShape(clickedShape);
+                    }
+                }
+                
+                // Start dragging if shape is selected
+                if (clickedShape.selected) {
+                    this.isDragging = true;
+                    this.dragStartX = pos.x - clickedShape.x;
+                    this.dragStartY = pos.y - clickedShape.y;
+                    
+                    // Store initial positions for all selected shapes
+                    this.selectedShapes.forEach(shape => {
+                        shape._dragOffsetX = pos.x - shape.x;
+                        shape._dragOffsetY = pos.y - shape.y;
+                    });
+                }
             } else {
-                this.selectShape(null);
+                // Clicked on empty space - clear selection
+                if (!e.shiftKey) {
+                    this.selectShape(null);
+                }
             }
         } else if (this.currentShapeType) {
             // Start drawing a new shape
@@ -209,31 +231,55 @@ class FlowchartCanvas {
             if (this.isResizing && this.selectedShape) {
                 this.resizeShape(this.selectedShape, this.resizeHandle, pos.x, pos.y);
                 this.render();
-                        } else if (this.isDragging && this.selectedShape) {
+            } else if (this.isDragging && this.selectedShapes.length > 0) {
+                // Move all selected shapes together
+                const primaryShape = this.selectedShape || this.selectedShapes[0];
                 let newX = pos.x - this.dragStartX;
                 let newY = pos.y - this.dragStartY;
                 
+                const deltaX = newX - primaryShape.x;
+                const deltaY = newY - primaryShape.y;
+                
                 // Apply grid snapping if enabled (but not for connectors)
-                if (this.snapToGrid && !(this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)) {
+                if (this.snapToGrid && !(primaryShape instanceof Arrow || primaryShape instanceof Line)) {
                     const snapped = this.snapToGridPoint(newX, newY);
                     newX = snapped.x;
                     newY = snapped.y;
                 }
                 
-                this.selectedShape.x = newX;
-                this.selectedShape.y = newY;
+                // Move primary shape
+                primaryShape.x = newX;
+                primaryShape.y = newY;
                 
                 // Apply guideline snapping if enabled (but not for connectors)
-                if (!(this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)) {
-                    this.applyGuidelineSnapping(this.selectedShape);
+                if (!(primaryShape instanceof Arrow || primaryShape instanceof Line)) {
+                    this.applyGuidelineSnapping(primaryShape);
                 } else {
                     this.guidelines = []; // Clear guidelines for connectors
                 }
                 
-                // Update endpoints for Arrow/Line shapes
-                if (this.selectedShape.updateEndpoints) {
-                    this.selectedShape.updateEndpoints();
+                // Calculate actual movement after snapping
+                const actualDeltaX = primaryShape.x - (newX - deltaX);
+                const actualDeltaY = primaryShape.y - (newY - deltaY);
+                
+                // Move other selected shapes by the same delta
+                this.selectedShapes.forEach(shape => {
+                    if (shape !== primaryShape) {
+                        shape.x = pos.x - shape._dragOffsetX + actualDeltaX;
+                        shape.y = pos.y - shape._dragOffsetY + actualDeltaY;
+                        
+                        // Update endpoints for Arrow/Line shapes
+                        if (shape.updateEndpoints) {
+                            shape.updateEndpoints();
+                        }
+                    }
+                });
+                
+                // Update endpoints for primary shape
+                if (primaryShape.updateEndpoints) {
+                    primaryShape.updateEndpoints();
                 }
+                
                 // Update all connector connections when shapes move
                 this.updateAllConnections();
                 this.render();
@@ -539,14 +585,47 @@ class FlowchartCanvas {
         }
     }
 
-    selectShape(shape) {
-        if (this.selectedShape) {
-            this.selectedShape.selected = false;
-        }
-        this.selectedShape = shape;
+        selectShape(shape) {
+        // Clear all selections
+        this.selectedShapes.forEach(s => s.selected = false);
+        this.selectedShapes = [];
+        
         if (shape) {
             shape.selected = true;
+            this.selectedShapes.push(shape);
         }
+        
+        this.selectedShape = shape; // Keep for backward compatibility
+        this.render();
+        this.updatePropertiesPanel();
+    }
+    
+    // Toggle selection of a shape (for Shift+Click)
+    toggleShapeSelection(shape) {
+        if (shape.selected) {
+            // Deselect shape
+            shape.selected = false;
+            const index = this.selectedShapes.indexOf(shape);
+            if (index > -1) {
+                this.selectedShapes.splice(index, 1);
+            }
+        } else {
+            // Add to selection
+            shape.selected = true;
+            this.selectedShapes.push(shape);
+        }
+        
+        // Update selectedShape to last selected for backward compatibility
+        this.selectedShape = this.selectedShapes.length > 0 ? this.selectedShapes[this.selectedShapes.length - 1] : null;
+        this.render();
+        this.updatePropertiesPanel();
+    }
+    
+    // Select all shapes
+    selectAll() {
+        this.selectedShapes = [...this.shapes];
+        this.shapes.forEach(shape => shape.selected = true);
+        this.selectedShape = this.selectedShapes.length > 0 ? this.selectedShapes[0] : null;
         this.render();
         this.updatePropertiesPanel();
     }
@@ -1150,15 +1229,16 @@ class FlowchartCanvas {
         });
     }
 
-    deleteSelected() {
-        if (this.selectedShape) {
-            this.removeShape(this.selectedShape);
-        }
-    }
-
-    clear() {
-        if (confirm('Are you sure you want to clear the canvas?')) {
-            this.shapes = [];
+        deleteSelected() {
+        if (this.selectedShapes.length > 0) {
+            // Delete all selected shapes
+            this.selectedShapes.forEach(shape => {
+                const index = this.shapes.indexOf(shape);
+                if (index > -1) {
+                    this.shapes.splice(index, 1);
+                }
+            });
+            this.selectedShapes = [];
             this.selectedShape = null;
             this.saveState();
             this.render();
@@ -1166,35 +1246,87 @@ class FlowchartCanvas {
         }
     }
 
-    duplicateShape(shape) {
-        const json = shape.toJSON();
-        json.x += 20;
-        json.y += 20;
-        json.id = Date.now() + Math.random();
-        const newShape = this.shapeFromJSON(json);
-        this.addShape(newShape);
-        this.selectShape(newShape);
-        this.saveState();
-    }
-
-    bringToFront(shape) {
-        const index = this.shapes.indexOf(shape);
-        if (index > -1) {
-            this.shapes.splice(index, 1);
-            this.shapes.push(shape);
+        clear() {
+        if (confirm('Are you sure you want to clear the canvas?')) {
+            this.shapes = [];
+            this.selectedShape = null;
+            this.selectedShapes = [];
             this.saveState();
             this.render();
+            this.updatePropertiesPanel();
         }
+    }
+
+        duplicateShape(shape) {
+        if (this.selectedShapes.length > 1) {
+            // Duplicate all selected shapes
+            const newShapes = [];
+            this.selectedShapes.forEach(s => {
+                const json = s.toJSON();
+                json.x += 20;
+                json.y += 20;
+                json.id = Date.now() + Math.random();
+                const newShape = this.shapeFromJSON(json);
+                this.shapes.push(newShape);
+                newShapes.push(newShape);
+            });
+            
+            // Select the duplicated shapes
+            this.selectedShapes.forEach(s => s.selected = false);
+            this.selectedShapes = newShapes;
+            newShapes.forEach(s => s.selected = true);
+            this.selectedShape = newShapes[0];
+            this.saveState();
+            this.render();
+        } else if (shape) {
+            // Single shape duplication
+            const json = shape.toJSON();
+            json.x += 20;
+            json.y += 20;
+            json.id = Date.now() + Math.random();
+            const newShape = this.shapeFromJSON(json);
+            this.addShape(newShape);
+            this.selectShape(newShape);
+            this.saveState();
+        }
+    }
+
+        bringToFront(shape) {
+        const shapesToMove = this.selectedShapes.length > 1 ? this.selectedShapes : [shape];
+        
+        shapesToMove.forEach(s => {
+            const index = this.shapes.indexOf(s);
+            if (index > -1) {
+                this.shapes.splice(index, 1);
+            }
+        });
+        
+        // Add all shapes to the end
+        shapesToMove.forEach(s => {
+            this.shapes.push(s);
+        });
+        
+        this.saveState();
+        this.render();
     }
 
     sendToBack(shape) {
-        const index = this.shapes.indexOf(shape);
-        if (index > -1) {
-            this.shapes.splice(index, 1);
-            this.shapes.unshift(shape);
-            this.saveState();
-            this.render();
-        }
+        const shapesToMove = this.selectedShapes.length > 1 ? this.selectedShapes : [shape];
+        
+        shapesToMove.forEach(s => {
+            const index = this.shapes.indexOf(s);
+            if (index > -1) {
+                this.shapes.splice(index, 1);
+            }
+        });
+        
+        // Add all shapes to the beginning (in reverse order to maintain relative order)
+        shapesToMove.reverse().forEach(s => {
+            this.shapes.unshift(s);
+        });
+        
+        this.saveState();
+        this.render();
     }
 
     saveState() {
@@ -1224,9 +1356,10 @@ class FlowchartCanvas {
         }
     }
 
-    loadState(state) {
+        loadState(state) {
         this.shapes = state.shapes.map(s => this.shapeFromJSON(s));
         this.selectedShape = null;
+        this.selectedShapes = [];
         this.render();
         this.updatePropertiesPanel();
     }

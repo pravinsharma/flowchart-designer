@@ -205,19 +205,19 @@ class FlowchartApp {
         });
 
         document.getElementById('ctxDuplicate').addEventListener('click', () => {
-            if (this.canvas.selectedShape) {
+            if (this.canvas.selectedShapes.length > 0) {
                 this.canvas.duplicateShape(this.canvas.selectedShape);
             }
         });
 
         document.getElementById('ctxBringFront').addEventListener('click', () => {
-            if (this.canvas.selectedShape) {
+            if (this.canvas.selectedShapes.length > 0) {
                 this.canvas.bringToFront(this.canvas.selectedShape);
             }
         });
 
         document.getElementById('ctxSendBack').addEventListener('click', () => {
-            if (this.canvas.selectedShape) {
+            if (this.canvas.selectedShapes.length > 0) {
                 this.canvas.sendToBack(this.canvas.selectedShape);
             }
         });
@@ -234,7 +234,7 @@ class FlowchartApp {
                 this.canvas.deleteSelected();
             }
             
-            // Undo/Redo
+            // Undo/Redo and Select All
             if (e.ctrlKey || e.metaKey) {
                 if (e.key === 'z' && !e.shiftKey) {
                     e.preventDefault();
@@ -242,6 +242,9 @@ class FlowchartApp {
                 } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
                     e.preventDefault();
                     this.canvas.redo();
+                } else if (e.key === 'a') {
+                    e.preventDefault();
+                    this.canvas.selectAll();
                 }
             }
             
@@ -293,6 +296,20 @@ class FlowchartApp {
 
     updatePropertiesPanel(shape) {
         const panel = document.getElementById('propertiesContent');
+        
+        // Show multi-select info if multiple shapes selected
+        if (this.canvas.selectedShapes.length > 1) {
+            panel.innerHTML = `
+                <div class="no-selection">
+                    <i class="fas fa-object-group"></i>
+                    <p><strong>${this.canvas.selectedShapes.length} shapes selected</strong></p>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+                        Move, delete, or duplicate multiple shapes together
+                    </p>
+                </div>
+            `;
+            return;
+        }
         
         if (!shape) {
             panel.innerHTML = `
