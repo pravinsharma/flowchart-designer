@@ -96,7 +96,27 @@ class FlowchartCanvas {
             
             if (this.currentShapeType === 'arrow' || this.currentShapeType === 'line') {
                 const ShapeClass = this.currentShapeType === 'arrow' ? Arrow : Line;
-                this.drawingShape = new ShapeClass(pos.x, pos.y, pos.x, pos.y);
+                
+                // Check if starting near a connection point
+                const startSnapResult = this.findNearestConnectionPoint(pos.x, pos.y, null);
+                let startX = pos.x;
+                let startY = pos.y;
+                
+                if (startSnapResult) {
+                    startX = startSnapResult.point.x;
+                    startY = startSnapResult.point.y;
+                    this.hoveredShape = startSnapResult.shape;
+                }
+                
+                this.drawingShape = new ShapeClass(startX, startY, startX, startY);
+                
+                // Set start connection if snapped
+                if (startSnapResult) {
+                    this.drawingShape.startConnection = {
+                        shapeId: startSnapResult.shape.id,
+                        position: startSnapResult.point.position
+                    };
+                }
             } else {
                 this.drawingShape = this.createShape(this.currentShapeType, pos.x, pos.y, 0, 0);
             }
@@ -154,8 +174,15 @@ class FlowchartCanvas {
                 this.drawingShape.x2 = pos.x;
                 this.drawingShape.y2 = pos.y;
                 
-                // Snap endpoint to connection points
-                const snapResult = this.findNearestConnectionPoint(pos.x, pos.y, this.drawingShape);
+                // Snap endpoint to connection points (excluding start shape if connected)
+                let excludeShape = this.drawingShape;
+                if (this.drawingShape.startConnection) {
+                    const startShape = this.shapes.find(s => s.id === this.drawingShape.startConnection.shapeId);
+                    // Allow snapping to the same shape we started from
+                    excludeShape = null;
+                }
+                
+                const snapResult = this.findNearestConnectionPoint(pos.x, pos.y, excludeShape);
                 if (snapResult) {
                     this.drawingShape.x2 = snapResult.point.x;
                     this.drawingShape.y2 = snapResult.point.y;
@@ -195,9 +222,15 @@ class FlowchartCanvas {
         }
 
         if (this.isDragging && this.drawingShape) {
-            if (this.drawingShape.width > 10 && this.drawingShape.height > 10) {
+            // For connectors, check if there's any movement
+            const isConnector = this.drawingShape instanceof Arrow || this.drawingShape instanceof Line;
+            const hasSize = isConnector ? 
+                (Math.abs(this.drawingShape.x2 - this.drawingShape.x1) > 5 || Math.abs(this.drawingShape.y2 - this.drawingShape.y1) > 5) :
+                (this.drawingShape.width > 10 && this.drawingShape.height > 10);
+            
+            if (hasSize) {
                 // Set end connection if snapped
-                if (this.hoveredShape && (this.drawingShape instanceof Arrow || this.drawingShape instanceof Line)) {
+                if (this.hoveredShape && isConnector) {
                     const snapResult = this.findNearestConnectionPoint(this.drawingShape.x2, this.drawingShape.y2, this.drawingShape);
                     if (snapResult) {
                         this.drawingShape.endConnection = {
@@ -480,7 +513,7 @@ class FlowchartCanvas {
     // Find nearest connection point within snap distance
     findNearestConnectionPoint(x, y, excludeShape) {
         let nearest = null;
-        let minDistance = this.snapDistance;
+        let minDistance = this.snapDistance / this.zoom; // Adjust for zoom level
         
         for (const shape of this.shapes) {
             if (shape === excludeShape || shape instanceof Arrow || shape instanceof Line) continue;
