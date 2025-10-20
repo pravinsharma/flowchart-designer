@@ -286,6 +286,27 @@ class Arrow extends Shape {
         this.x2 = x2;
         this.y2 = y2;
         this.fillColor = 'transparent';
+        // Store initial offset for proper movement
+        this._offsetX1 = x1 - this.x;
+        this._offsetY1 = y1 - this.y;
+        this._offsetX2 = x2 - this.x;
+        this._offsetY2 = y2 - this.y;
+    }
+
+    // Override getHandles to use x1, y1, x2, y2
+    getHandles() {
+        return [
+            { x: this.x1, y: this.y1, cursor: 'move' },
+            { x: this.x2, y: this.y2, cursor: 'move' }
+        ];
+    }
+
+    // Update x1, y1, x2, y2 when position changes
+    updateEndpoints() {
+        this.x1 = this.x + this._offsetX1;
+        this.y1 = this.y + this._offsetY1;
+        this.x2 = this.x + this._offsetX2;
+        this.y2 = this.y + this._offsetY2;
     }
 
     drawShape(ctx) {

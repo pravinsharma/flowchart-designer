@@ -120,6 +120,10 @@ class FlowchartCanvas {
             } else if (this.isDragging && this.selectedShape) {
                 this.selectedShape.x = pos.x - this.dragStartX;
                 this.selectedShape.y = pos.y - this.dragStartY;
+                // Update endpoints for Arrow/Line shapes
+                if (this.selectedShape.updateEndpoints) {
+                    this.selectedShape.updateEndpoints();
+                }
                 this.render();
             } else {
                 // Update cursor based on what's under mouse
@@ -149,6 +153,13 @@ class FlowchartCanvas {
                 this.drawingShape.y = Math.min(this.drawingShape.y1, this.drawingShape.y2);
                 this.drawingShape.width = Math.abs(this.drawingShape.x2 - this.drawingShape.x1);
                 this.drawingShape.height = Math.abs(this.drawingShape.y2 - this.drawingShape.y1);
+                // Update offsets for proper movement later
+                if (this.drawingShape.updateEndpoints) {
+                    this.drawingShape._offsetX1 = this.drawingShape.x1 - this.drawingShape.x;
+                    this.drawingShape._offsetY1 = this.drawingShape.y1 - this.drawingShape.y;
+                    this.drawingShape._offsetX2 = this.drawingShape.x2 - this.drawingShape.x;
+                    this.drawingShape._offsetY2 = this.drawingShape.y2 - this.drawingShape.y;
+                }
             } else {
                 const width = pos.x - this.dragStartX;
                 const height = pos.y - this.dragStartY;
@@ -278,6 +289,28 @@ class FlowchartCanvas {
     resizeShape(shape, handleIndex, x, y) {
         const handles = shape.getHandles();
         const handle = handles[handleIndex];
+        
+        // Handle Arrow/Line differently (they have only 2 handles)
+        if (shape instanceof Arrow || shape instanceof Line) {
+            if (handleIndex === 0) {
+                shape.x1 = x;
+                shape.y1 = y;
+            } else if (handleIndex === 1) {
+                shape.x2 = x;
+                shape.y2 = y;
+            }
+            // Update bounding box
+            shape.x = Math.min(shape.x1, shape.x2);
+            shape.y = Math.min(shape.y1, shape.y2);
+            shape.width = Math.abs(shape.x2 - shape.x1);
+            shape.height = Math.abs(shape.y2 - shape.y1);
+            // Update offsets
+            shape._offsetX1 = shape.x1 - shape.x;
+            shape._offsetY1 = shape.y1 - shape.y;
+            shape._offsetX2 = shape.x2 - shape.x;
+            shape._offsetY2 = shape.y2 - shape.y;
+            return;
+        }
         
         switch (handleIndex) {
             case 0: // Top-left
