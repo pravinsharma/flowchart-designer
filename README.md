@@ -317,6 +317,7 @@ if (e.key === 'your-key') {
 
 ### Planned Features
 - [x] Multi-select with Shift+Click
+- [ ] Box select (drag rectangle to select multiple)
 - [ ] Shape grouping and ungrouping
 - [ ] Alignment tools (align left, center, right, etc.)
 - [ ] Distribution tools (space evenly)
