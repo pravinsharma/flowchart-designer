@@ -68,6 +68,36 @@ class FlowchartCanvas {
         }
 
         if (this.currentTool === 'select') {
+            // Check if clicking on a connection point to start drawing connector
+            const connectionPointSnap = this.findNearestConnectionPoint(pos.x, pos.y, null);
+            if (connectionPointSnap && this.isNearConnectionPoint(pos.x, pos.y, connectionPointSnap.point)) {
+                // Auto-activate arrow connector tool
+                this.currentTool = 'draw';
+                this.currentShapeType = 'arrow';
+                this.canvas.style.cursor = 'crosshair';
+                
+                // Start drawing arrow from this connection point
+                this.dragStartX = connectionPointSnap.point.x;
+                this.dragStartY = connectionPointSnap.point.y;
+                this.isDragging = true;
+                this.hoveredShape = connectionPointSnap.shape;
+                
+                this.drawingShape = new Arrow(
+                    connectionPointSnap.point.x,
+                    connectionPointSnap.point.y,
+                    connectionPointSnap.point.x,
+                    connectionPointSnap.point.y
+                );
+                
+                this.drawingShape.startConnection = {
+                    shapeId: connectionPointSnap.shape.id,
+                    position: connectionPointSnap.point.position
+                };
+                
+                this.render();
+                return;
+            }
+            
             // Check if clicking on a handle
             if (this.selectedShape) {
                 const handleIndex = this.selectedShape.getHandleAtPoint(pos.x, pos.y);
@@ -152,6 +182,18 @@ class FlowchartCanvas {
                 this.updateAllConnections();
                 this.render();
             } else {
+                // Check if hovering over a connection point
+                const connectionPointSnap = this.findNearestConnectionPoint(pos.x, pos.y, null);
+                if (connectionPointSnap && this.isNearConnectionPoint(pos.x, pos.y, connectionPointSnap.point)) {
+                    this.canvas.style.cursor = 'crosshair';
+                    this.hoveredShape = connectionPointSnap.shape;
+                    this.render();
+                    return;
+                } else if (this.hoveredShape) {
+                    this.hoveredShape = null;
+                    this.render();
+                }
+                
                 // Update cursor based on what's under mouse
                 const shape = this.getShapeAtPoint(pos.x, pos.y);
                 if (shape) {
@@ -460,9 +502,10 @@ class FlowchartCanvas {
         // Draw all shapes
         this.shapes.forEach(shape => shape.draw(this.ctx));
         
-        // Draw connection points on hovered shape
+        // Draw connection points on hovered shape (when hovering or drawing connectors)
         if (this.hoveredShape && (this.currentShapeType === 'arrow' || this.currentShapeType === 'line' || 
-            (this.isResizing && this.selectedShape && (this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)))) {
+            (this.isResizing && this.selectedShape && (this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)) ||
+            this.currentTool === 'select')) {
             this.hoveredShape.drawConnectionPoints(this.ctx);
         }
         
@@ -537,6 +580,16 @@ class FlowchartCanvas {
         }
         
         return nearest;
+    }
+    
+    // Check if point is very near to a connection point (tighter threshold for clicking)
+    isNearConnectionPoint(x, y, connectionPoint) {
+        const clickRadius = 8 / this.zoom; // 8 pixels in canvas space
+        const distance = Math.sqrt(
+            Math.pow(connectionPoint.x - x, 2) + 
+            Math.pow(connectionPoint.y - y, 2)
+        );
+        return distance < clickRadius;
     }
 
     // Update all connector connections
