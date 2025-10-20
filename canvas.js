@@ -20,12 +20,22 @@ class FlowchartCanvas {
         this.isPanning = false;
         this.history = [];
         this.historyIndex = -1;
-                this.snapDistance = 15; // Distance for snapping to connection points
+                        this.snapDistance = 15; // Distance for snapping to connection points
         this.hoveredShape = null; // Track hovered shape for showing connection points
         this.hoveredConnector = null; // Track hovered connector for endpoint detection
         this.hoveredShapeForHighlight = null; // Track any hovered shape for green highlighting
         this.inlineEditor = null; // Inline text editor element
         this.editingShape = null; // Shape currently being edited
+        
+        // Grid and Snapping
+        this.gridEnabled = true; // Show grid
+        this.gridSize = 20; // Grid cell size in pixels
+        this.snapToGrid = true; // Enable grid snapping
+        this.snapThreshold = 10; // Snap threshold in pixels
+        
+        // Guidelines
+        this.guidelinesEnabled = true; // Show alignment guidelines
+        this.guidelines = []; // Active guidelines: { type: 'vertical'|'horizontal', position: number }
         
         this.init();
     }
@@ -199,9 +209,27 @@ class FlowchartCanvas {
             if (this.isResizing && this.selectedShape) {
                 this.resizeShape(this.selectedShape, this.resizeHandle, pos.x, pos.y);
                 this.render();
-            } else if (this.isDragging && this.selectedShape) {
-                this.selectedShape.x = pos.x - this.dragStartX;
-                this.selectedShape.y = pos.y - this.dragStartY;
+                        } else if (this.isDragging && this.selectedShape) {
+                let newX = pos.x - this.dragStartX;
+                let newY = pos.y - this.dragStartY;
+                
+                // Apply grid snapping if enabled (but not for connectors)
+                if (this.snapToGrid && !(this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)) {
+                    const snapped = this.snapToGridPoint(newX, newY);
+                    newX = snapped.x;
+                    newY = snapped.y;
+                }
+                
+                this.selectedShape.x = newX;
+                this.selectedShape.y = newY;
+                
+                // Apply guideline snapping if enabled (but not for connectors)
+                if (!(this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)) {
+                    this.applyGuidelineSnapping(this.selectedShape);
+                } else {
+                    this.guidelines = []; // Clear guidelines for connectors
+                }
+                
                 // Update endpoints for Arrow/Line shapes
                 if (this.selectedShape.updateEndpoints) {
                     this.selectedShape.updateEndpoints();
@@ -304,13 +332,37 @@ class FlowchartCanvas {
                     this.drawingShape._offsetX2 = this.drawingShape.x2 - this.drawingShape.x;
                     this.drawingShape._offsetY2 = this.drawingShape.y2 - this.drawingShape.y;
                 }
-            } else {
-                const width = pos.x - this.dragStartX;
-                const height = pos.y - this.dragStartY;
-                this.drawingShape.width = Math.abs(width);
-                this.drawingShape.height = Math.abs(height);
-                this.drawingShape.x = width < 0 ? pos.x : this.dragStartX;
-                this.drawingShape.y = height < 0 ? pos.y : this.dragStartY;
+                        } else {
+                let width = pos.x - this.dragStartX;
+                let height = pos.y - this.dragStartY;
+                
+                // Apply grid snapping to drawing shapes
+                if (this.snapToGrid) {
+                    const endX = width < 0 ? pos.x : this.dragStartX + Math.abs(width);
+                    const endY = height < 0 ? pos.y : this.dragStartY + Math.abs(height);
+                    const snapped = this.snapToGridPoint(endX, endY);
+                    
+                    if (width < 0) {
+                        this.drawingShape.x = snapped.x;
+                        this.drawingShape.width = this.dragStartX - snapped.x;
+                    } else {
+                        this.drawingShape.x = this.dragStartX;
+                        this.drawingShape.width = snapped.x - this.dragStartX;
+                    }
+                    
+                    if (height < 0) {
+                        this.drawingShape.y = snapped.y;
+                        this.drawingShape.height = this.dragStartY - snapped.y;
+                    } else {
+                        this.drawingShape.y = this.dragStartY;
+                        this.drawingShape.height = snapped.y - this.dragStartY;
+                    }
+                } else {
+                    this.drawingShape.width = Math.abs(width);
+                    this.drawingShape.height = Math.abs(height);
+                    this.drawingShape.x = width < 0 ? pos.x : this.dragStartX;
+                    this.drawingShape.y = height < 0 ? pos.y : this.dragStartY;
+                }
             }
             this.render();
         }
@@ -416,6 +468,7 @@ class FlowchartCanvas {
         this.resizeHandle = -1;
         this.hoveredConnector = null; // Clear on mouse up
         this.hoveredShapeForHighlight = null;
+        this.guidelines = []; // Clear guidelines on mouse up
         this.render();
     }
 
@@ -617,12 +670,17 @@ class FlowchartCanvas {
         if (shape.height < 20) shape.height = 20;
     }
 
-    render() {
+        render() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
         this.ctx.save();
         this.ctx.translate(this.panX, this.panY);
         this.ctx.scale(this.zoom, this.zoom);
+        
+        // Draw grid if enabled
+        if (this.gridEnabled) {
+            this.drawGrid();
+        }
         
         // Draw all shapes
         this.shapes.forEach(shape => shape.draw(this.ctx));
@@ -659,7 +717,7 @@ class FlowchartCanvas {
             this.drawGreenConnector(this.hoveredConnector);
         }
         
-        // Draw green highlight on hovered shape
+                // Draw green highlight on hovered shape
         if (this.hoveredShapeForHighlight && !this.isDragging && !this.isResizing) {
             // Don't highlight if it's already selected (has purple handles)
             if (!this.hoveredShapeForHighlight.selected) {
@@ -671,7 +729,182 @@ class FlowchartCanvas {
             }
         }
         
+        // Draw guidelines if enabled and active
+        if (this.guidelinesEnabled && this.guidelines.length > 0) {
+            this.drawGuidelines();
+        }
+        
         this.ctx.restore();
+    }
+    
+        // Draw grid
+    drawGrid() {
+        const startX = Math.floor(-this.panX / this.zoom / this.gridSize) * this.gridSize;
+        const startY = Math.floor(-this.panY / this.zoom / this.gridSize) * this.gridSize;
+        const endX = startX + (this.canvas.width / this.zoom) + this.gridSize;
+        const endY = startY + (this.canvas.height / this.zoom) + this.gridSize;
+        
+        this.ctx.save();
+        this.ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+        this.ctx.lineWidth = 1 / this.zoom; // Keep line width constant when zooming
+        
+        // Draw vertical lines
+        for (let x = startX; x <= endX; x += this.gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, startY);
+            this.ctx.lineTo(x, endY);
+            this.ctx.stroke();
+        }
+        
+        // Draw horizontal lines
+        for (let y = startY; y <= endY; y += this.gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, y);
+            this.ctx.lineTo(endX, y);
+            this.ctx.stroke();
+        }
+        
+        this.ctx.restore();
+    }
+    
+    // Draw guidelines
+    drawGuidelines() {
+        this.ctx.save();
+        this.ctx.strokeStyle = '#ff00ff'; // Magenta color for guidelines
+        this.ctx.lineWidth = 1 / this.zoom;
+        this.ctx.setLineDash([5 / this.zoom, 5 / this.zoom]);
+        
+        const startX = -this.panX / this.zoom;
+        const startY = -this.panY / this.zoom;
+        const endX = startX + (this.canvas.width / this.zoom);
+        const endY = startY + (this.canvas.height / this.zoom);
+        
+        this.guidelines.forEach(guide => {
+            this.ctx.beginPath();
+            if (guide.type === 'vertical') {
+                this.ctx.moveTo(guide.position, startY);
+                this.ctx.lineTo(guide.position, endY);
+            } else {
+                this.ctx.moveTo(startX, guide.position);
+                this.ctx.lineTo(endX, guide.position);
+            }
+            this.ctx.stroke();
+        });
+        
+        this.ctx.restore();
+    }
+    
+    // Snap point to grid
+    snapToGridPoint(x, y) {
+        if (!this.snapToGrid) return { x, y };
+        
+        return {
+            x: Math.round(x / this.gridSize) * this.gridSize,
+            y: Math.round(y / this.gridSize) * this.gridSize
+        };
+    }
+    
+    // Find alignment guidelines for a shape
+    findGuidelines(shape) {
+        if (!this.guidelinesEnabled || !shape) return [];
+        
+        const guidelines = [];
+        const threshold = this.snapThreshold / this.zoom;
+        
+        // Get shape bounds
+        const shapeLeft = shape.x;
+        const shapeRight = shape.x + shape.width;
+        const shapeTop = shape.y;
+        const shapeBottom = shape.y + shape.height;
+        const shapeCenterX = shape.x + shape.width / 2;
+        const shapeCenterY = shape.y + shape.height / 2;
+        
+        // Check against all other shapes
+        this.shapes.forEach(other => {
+            if (other === shape || other instanceof Arrow || other instanceof Line) return;
+            
+            const otherLeft = other.x;
+            const otherRight = other.x + other.width;
+            const otherTop = other.y;
+            const otherBottom = other.y + other.height;
+            const otherCenterX = other.x + other.width / 2;
+            const otherCenterY = other.y + other.height / 2;
+            
+            // Check vertical alignments
+            if (Math.abs(shapeLeft - otherLeft) < threshold) {
+                guidelines.push({ type: 'vertical', position: otherLeft, snapValue: otherLeft });
+            }
+            if (Math.abs(shapeRight - otherRight) < threshold) {
+                guidelines.push({ type: 'vertical', position: otherRight, snapValue: otherRight });
+            }
+            if (Math.abs(shapeCenterX - otherCenterX) < threshold) {
+                guidelines.push({ type: 'vertical', position: otherCenterX, snapValue: otherCenterX });
+            }
+            if (Math.abs(shapeLeft - otherRight) < threshold) {
+                guidelines.push({ type: 'vertical', position: otherRight, snapValue: otherRight });
+            }
+            if (Math.abs(shapeRight - otherLeft) < threshold) {
+                guidelines.push({ type: 'vertical', position: otherLeft, snapValue: otherLeft });
+            }
+            
+            // Check horizontal alignments
+            if (Math.abs(shapeTop - otherTop) < threshold) {
+                guidelines.push({ type: 'horizontal', position: otherTop, snapValue: otherTop });
+            }
+            if (Math.abs(shapeBottom - otherBottom) < threshold) {
+                guidelines.push({ type: 'horizontal', position: otherBottom, snapValue: otherBottom });
+            }
+            if (Math.abs(shapeCenterY - otherCenterY) < threshold) {
+                guidelines.push({ type: 'horizontal', position: otherCenterY, snapValue: otherCenterY });
+            }
+            if (Math.abs(shapeTop - otherBottom) < threshold) {
+                guidelines.push({ type: 'horizontal', position: otherBottom, snapValue: otherBottom });
+            }
+            if (Math.abs(shapeBottom - otherTop) < threshold) {
+                guidelines.push({ type: 'horizontal', position: otherTop, snapValue: otherTop });
+            }
+        });
+        
+        return guidelines;
+    }
+    
+    // Apply guideline snapping to shape position
+    applyGuidelineSnapping(shape) {
+        if (!this.guidelinesEnabled || !shape) return;
+        
+        const guides = this.findGuidelines(shape);
+        
+        // Apply snapping
+        guides.forEach(guide => {
+            if (guide.type === 'vertical') {
+                const shapeLeft = shape.x;
+                const shapeRight = shape.x + shape.width;
+                const shapeCenterX = shape.x + shape.width / 2;
+                
+                if (Math.abs(shapeLeft - guide.snapValue) < this.snapThreshold / this.zoom) {
+                    shape.x = guide.snapValue;
+                } else if (Math.abs(shapeRight - guide.snapValue) < this.snapThreshold / this.zoom) {
+                    shape.x = guide.snapValue - shape.width;
+                } else if (Math.abs(shapeCenterX - guide.snapValue) < this.snapThreshold / this.zoom) {
+                    shape.x = guide.snapValue - shape.width / 2;
+                }
+            } else {
+                const shapeTop = shape.y;
+                const shapeBottom = shape.y + shape.height;
+                const shapeCenterY = shape.y + shape.height / 2;
+                
+                if (Math.abs(shapeTop - guide.snapValue) < this.snapThreshold / this.zoom) {
+                    shape.y = guide.snapValue;
+                } else if (Math.abs(shapeBottom - guide.snapValue) < this.snapThreshold / this.zoom) {
+                    shape.y = guide.snapValue - shape.height;
+                } else if (Math.abs(shapeCenterY - guide.snapValue) < this.snapThreshold / this.zoom) {
+                    shape.y = guide.snapValue - shape.height / 2;
+                }
+            }
+        });
+        
+        // Update guidelines for display
+        this.guidelines = guides;
     }
     
     // Draw green highlight around shape
@@ -802,11 +1035,40 @@ class FlowchartCanvas {
         this.updateZoomDisplay();
     }
 
-    updateZoomDisplay() {
+        updateZoomDisplay() {
         const zoomLevel = document.getElementById('zoomLevel');
         if (zoomLevel) {
             zoomLevel.textContent = Math.round(this.zoom * 100) + '%';
         }
+    }
+    
+    // Toggle grid visibility
+    toggleGrid() {
+        this.gridEnabled = !this.gridEnabled;
+        this.render();
+        return this.gridEnabled;
+    }
+    
+    // Toggle grid snapping
+    toggleGridSnapping() {
+        this.snapToGrid = !this.snapToGrid;
+        return this.snapToGrid;
+    }
+    
+    // Toggle guidelines
+    toggleGuidelines() {
+        this.guidelinesEnabled = !this.guidelinesEnabled;
+        if (!this.guidelinesEnabled) {
+            this.guidelines = [];
+        }
+        this.render();
+        return this.guidelinesEnabled;
+    }
+    
+    // Set grid size
+    setGridSize(size) {
+        this.gridSize = Math.max(5, Math.min(100, size));
+        this.render();
     }
 
     // Find nearest connection point within snap distance
@@ -969,12 +1231,16 @@ class FlowchartCanvas {
         this.updatePropertiesPanel();
     }
 
-    toJSON() {
+        toJSON() {
         return {
             shapes: this.shapes.map(s => s.toJSON()),
             zoom: this.zoom,
             panX: this.panX,
-            panY: this.panY
+            panY: this.panY,
+            gridEnabled: this.gridEnabled,
+            gridSize: this.gridSize,
+            snapToGrid: this.snapToGrid,
+            guidelinesEnabled: this.guidelinesEnabled
         };
     }
 
@@ -1213,12 +1479,16 @@ class FlowchartCanvas {
         URL.revokeObjectURL(url);
     }
 
-    loadFromJSON(json) {
+        loadFromJSON(json) {
         const data = JSON.parse(json);
         this.shapes = data.shapes.map(s => this.shapeFromJSON(s));
         this.zoom = data.zoom || 1;
         this.panX = data.panX || 0;
         this.panY = data.panY || 0;
+        this.gridEnabled = data.gridEnabled !== undefined ? data.gridEnabled : true;
+        this.gridSize = data.gridSize || 20;
+        this.snapToGrid = data.snapToGrid !== undefined ? data.snapToGrid : true;
+        this.guidelinesEnabled = data.guidelinesEnabled !== undefined ? data.guidelinesEnabled : true;
         this.selectedShape = null;
         this.saveState();
         this.render();

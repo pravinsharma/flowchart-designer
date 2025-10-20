@@ -53,6 +53,22 @@ class FlowchartApp {
             this.canvas.redo();
         });
 
+        // Grid and Guidelines
+        document.getElementById('gridBtn').addEventListener('click', () => {
+            const enabled = this.canvas.toggleGrid();
+            this.toggleButtonState('gridBtn', enabled);
+        });
+
+        document.getElementById('snapBtn').addEventListener('click', () => {
+            const enabled = this.canvas.toggleGridSnapping();
+            this.toggleButtonState('snapBtn', enabled);
+        });
+
+        document.getElementById('guidelinesBtn').addEventListener('click', () => {
+            const enabled = this.canvas.toggleGuidelines();
+            this.toggleButtonState('guidelinesBtn', enabled);
+        });
+
         // Delete and Clear
         document.getElementById('deleteBtn').addEventListener('click', () => {
             this.canvas.deleteSelected();
@@ -245,6 +261,21 @@ class FlowchartApp {
                 this.canvas.resetZoom();
             }
             
+            // Grid and Guidelines shortcuts
+            if (e.key === 'g' || e.key === 'G') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    document.getElementById('gridBtn').click();
+                }
+            } else if (e.key === 's' || e.key === 'S') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    document.getElementById('snapBtn').click();
+                }
+            } else if (e.key === 'l' || e.key === 'L') {
+                if (!e.ctrlKey && !e.metaKey) {
+                    document.getElementById('guidelinesBtn').click();
+                }
+            }
+            
             // Escape
             if (e.key === 'Escape') {
                 this.canvas.selectShape(null);
@@ -412,6 +443,15 @@ class FlowchartApp {
             btn.classList.remove('active');
         });
         document.getElementById(toolId).classList.add('active');
+    }
+
+    toggleButtonState(buttonId, enabled) {
+        const btn = document.getElementById(buttonId);
+        if (enabled) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     }
 
     showNotification(message) {
