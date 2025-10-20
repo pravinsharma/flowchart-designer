@@ -251,8 +251,37 @@ body {
 }
 
 .database-preview {
+    width: 40px;
+    height: 40px;
     border: 2px solid #333;
     border-radius: 50% 50% 0 0;
+    position: relative;
+    background: white;
+}
+
+.database-preview::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    height: 8px;
+    border: 2px solid #333;
+    border-top: none;
+    border-radius: 0 0 50% 50%;
+    background: white;
+}
+
+.database-preview::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    height: 8px;
+    border-bottom: 2px solid #333;
+    border-radius: 50% 50% 0 0;
+    background: white;
 }
 
 .arrow-preview {
