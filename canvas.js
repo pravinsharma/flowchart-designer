@@ -283,19 +283,72 @@ class FlowchartCanvas {
                 (Math.abs(this.drawingShape.x2 - this.drawingShape.x1) > 5 || Math.abs(this.drawingShape.y2 - this.drawingShape.y1) > 5) :
                 (this.drawingShape.width > 10 && this.drawingShape.height > 10);
             
-            if (hasSize) {
+                        if (hasSize) {
+                let newShapeCreated = null;
+                
                 // Set end connection if snapped
-                if (this.hoveredShape && isConnector) {
+                if (isConnector) {
                     const snapResult = this.findNearestConnectionPoint(this.drawingShape.x2, this.drawingShape.y2, this.drawingShape);
                     if (snapResult) {
                         this.drawingShape.endConnection = {
                             shapeId: snapResult.shape.id,
                             position: snapResult.point.position
                         };
+                    } else if (this.drawingShape.startConnection) {
+                        // No snap found - create a new shape at the endpoint
+                        const sourceShape = this.shapes.find(s => s.id === this.drawingShape.startConnection.shapeId);
+                        
+                        // Create a rectangle at the endpoint (default shape)
+                        const newShape = new Rectangle(
+                            this.drawingShape.x2 - 60,  // Center around endpoint
+                            this.drawingShape.y2 - 40,
+                            120,
+                            80
+                        );
+                        
+                        // Copy some styling from source if it exists
+                        if (sourceShape && !(sourceShape instanceof Arrow) && !(sourceShape instanceof Line)) {
+                            newShape.fillColor = sourceShape.fillColor;
+                            newShape.strokeColor = sourceShape.strokeColor;
+                        }
+                        
+                        this.addShape(newShape);
+                        newShapeCreated = newShape;
+                        
+                        // Find closest connection point on new shape
+                        const points = newShape.getConnectionPoints();
+                        let closestPoint = points[0];
+                        let minDist = Infinity;
+                        
+                        points.forEach(point => {
+                            const dist = Math.sqrt(
+                                Math.pow(point.x - this.drawingShape.x2, 2) + 
+                                Math.pow(point.y - this.drawingShape.y2, 2)
+                            );
+                            if (dist < minDist) {
+                                minDist = dist;
+                                closestPoint = point;
+                            }
+                        });
+                        
+                        // Connect to the new shape
+                        this.drawingShape.x2 = closestPoint.x;
+                        this.drawingShape.y2 = closestPoint.y;
+                        this.drawingShape.endConnection = {
+                            shapeId: newShape.id,
+                            position: closestPoint.position
+                        };
+                        this.drawingShape.updateBoundingBox();
                     }
                 }
                 this.addShape(this.drawingShape);
-                this.selectShape(this.drawingShape);
+                
+                // Select the newly created shape, otherwise select the connector
+                if (newShapeCreated) {
+                    this.selectShape(newShapeCreated);
+                } else {
+                    this.selectShape(this.drawingShape);
+                }
                 this.saveState();
                 
                 // Switch back to select tool automatically
