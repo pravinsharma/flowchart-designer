@@ -398,14 +398,23 @@ class Arrow extends Shape {
         // Connection tracking
         this.startConnection = null; // { shapeId, position }
         this.endConnection = null;   // { shapeId, position }
+        // Waypoints for multi-segment lines
+        this.waypoints = []; // Array of {x, y} between start and end
     }
 
-    // Override getHandles to use x1, y1, x2, y2
+    // Override getHandles to include waypoints
     getHandles() {
-        return [
-            { x: this.x1, y: this.y1, cursor: 'move' },
-            { x: this.x2, y: this.y2, cursor: 'move' }
+        const handles = [
+            { x: this.x1, y: this.y1, cursor: 'move', type: 'endpoint' },
+            { x: this.x2, y: this.y2, cursor: 'move', type: 'endpoint' }
         ];
+        
+        // Add waypoint handles
+        this.waypoints.forEach((wp, index) => {
+            handles.push({ x: wp.x, y: wp.y, cursor: 'move', type: 'waypoint', index });
+        });
+        
+        return handles;
     }
 
     // Update x1, y1, x2, y2 when position changes
@@ -418,15 +427,25 @@ class Arrow extends Shape {
 
     drawShape(ctx) {
         const headLength = 15;
-        const angle = Math.atan2(this.y2 - this.y1, this.x2 - this.x1);
         
-        // Draw line
+        // Draw line segments
         ctx.beginPath();
         ctx.moveTo(this.x1, this.y1);
+        
+        // Draw through waypoints
+        this.waypoints.forEach(wp => {
+            ctx.lineTo(wp.x, wp.y);
+        });
+        
         ctx.lineTo(this.x2, this.y2);
         ctx.stroke();
         
-        // Draw arrow head
+        // Draw arrow head at the end
+        const lastPoint = this.waypoints.length > 0 ? 
+            this.waypoints[this.waypoints.length - 1] : 
+            { x: this.x1, y: this.y1 };
+        const angle = Math.atan2(this.y2 - lastPoint.y, this.x2 - lastPoint.x);
+        
         ctx.beginPath();
         ctx.moveTo(this.x2, this.y2);
         ctx.lineTo(
@@ -448,33 +467,107 @@ class Arrow extends Shape {
     }
 
     distanceToLine(x, y) {
-        const A = x - this.x1;
-        const B = y - this.y1;
-        const C = this.x2 - this.x1;
-        const D = this.y2 - this.y1;
+        // Check distance to each segment
+        const points = [{ x: this.x1, y: this.y1 }, ...this.waypoints, { x: this.x2, y: this.y2 }];
+        let minDist = Infinity;
         
-        const dot = A * C + B * D;
-        const lenSq = C * C + D * D;
-        let param = -1;
-        
-        if (lenSq !== 0) param = dot / lenSq;
-        
-        let xx, yy;
-        
-        if (param < 0) {
-            xx = this.x1;
-            yy = this.y1;
-        } else if (param > 1) {
-            xx = this.x2;
-            yy = this.y2;
-        } else {
-            xx = this.x1 + param * C;
-            yy = this.y1 + param * D;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            
+            const A = x - p1.x;
+            const B = y - p1.y;
+            const C = p2.x - p1.x;
+            const D = p2.y - p1.y;
+            
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+            
+            if (lenSq !== 0) param = dot / lenSq;
+            
+            let xx, yy;
+            
+            if (param < 0) {
+                xx = p1.x;
+                yy = p1.y;
+            } else if (param > 1) {
+                xx = p2.x;
+                yy = p2.y;
+            } else {
+                xx = p1.x + param * C;
+                yy = p1.y + param * D;
+            }
+            
+            const dx = x - xx;
+            const dy = y - yy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < minDist) {
+                minDist = dist;
+            }
         }
         
-        const dx = x - xx;
-        const dy = y - yy;
-        return Math.sqrt(dx * dx + dy * dy);
+        return minDist;
+    }
+    
+    // Add waypoint at the closest point on the line
+    addWaypointAt(x, y) {
+        const points = [{ x: this.x1, y: this.y1 }, ...this.waypoints, { x: this.x2, y: this.y2 }];
+        let closestSegment = 0;
+        let minDist = Infinity;
+        let closestPoint = { x, y };
+        
+        // Find which segment is closest
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            
+            const A = x - p1.x;
+            const B = y - p1.y;
+            const C = p2.x - p1.x;
+            const D = p2.y - p1.y;
+            
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = lenSq !== 0 ? dot / lenSq : -1;
+            param = Math.max(0, Math.min(1, param));
+            
+            const xx = p1.x + param * C;
+            const yy = p1.y + param * D;
+            
+            const dx = x - xx;
+            const dy = y - yy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < minDist) {
+                minDist = dist;
+                closestSegment = i;
+                closestPoint = { x: xx, y: yy };
+            }
+        }
+        
+        // Insert waypoint at the appropriate position
+        this.waypoints.splice(closestSegment, 0, closestPoint);
+        this.updateBoundingBox();
+    }
+    
+    // Update bounding box to include all waypoints
+    updateBoundingBox() {
+        const allPoints = [{ x: this.x1, y: this.y1 }, ...this.waypoints, { x: this.x2, y: this.y2 }];
+        
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        allPoints.forEach(p => {
+            minX = Math.min(minX, p.x);
+            minY = Math.min(minY, p.y);
+            maxX = Math.max(maxX, p.x);
+            maxY = Math.max(maxY, p.y);
+        });
+        
+        this.x = minX;
+        this.y = minY;
+        this.width = maxX - minX;
+        this.height = maxY - minY;
     }
 
     // Update connections when shapes move
@@ -518,6 +611,7 @@ class Arrow extends Shape {
         json.y2 = this.y2;
         json.startConnection = this.startConnection;
         json.endConnection = this.endConnection;
+        json.waypoints = this.waypoints;
         return json;
     }
 }
@@ -526,6 +620,12 @@ class Line extends Arrow {
     drawShape(ctx) {
         ctx.beginPath();
         ctx.moveTo(this.x1, this.y1);
+        
+        // Draw through waypoints
+        this.waypoints.forEach(wp => {
+            ctx.lineTo(wp.x, wp.y);
+        });
+        
         ctx.lineTo(this.x2, this.y2);
         ctx.stroke();
     }

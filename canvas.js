@@ -68,6 +68,17 @@ class FlowchartCanvas {
         }
 
         if (this.currentTool === 'select') {
+            // Ctrl+Click on connector to add waypoint
+            if (e.ctrlKey || e.metaKey) {
+                const clickedShape = this.getShapeAtPoint(pos.x, pos.y);
+                if (clickedShape && (clickedShape instanceof Arrow || clickedShape instanceof Line)) {
+                    clickedShape.addWaypointAt(pos.x, pos.y);
+                    this.selectShape(clickedShape);
+                    this.saveState();
+                    this.render();
+                    return;
+                }
+            }
             // Check if clicking on a connection point to start drawing connector
             const connectionPointSnap = this.findNearestConnectionPoint(pos.x, pos.y, null);
             if (connectionPointSnap && this.isNearConnectionPoint(pos.x, pos.y, connectionPointSnap.point)) {
@@ -399,8 +410,16 @@ class FlowchartCanvas {
         const handles = shape.getHandles();
         const handle = handles[handleIndex];
         
-        // Handle Arrow/Line differently (they have only 2 handles)
+        // Handle Arrow/Line differently
         if (shape instanceof Arrow || shape instanceof Line) {
+            // Check if it's a waypoint handle
+            if (handle.type === 'waypoint') {
+                // Move the waypoint
+                shape.waypoints[handle.index].x = x;
+                shape.waypoints[handle.index].y = y;
+                shape.updateBoundingBox();
+                return;
+            }
             // Snap to connection points
             const snapResult = this.findNearestConnectionPoint(x, y, shape);
             if (snapResult) {
