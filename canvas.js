@@ -242,6 +242,12 @@ class FlowchartCanvas {
                 this.addShape(this.drawingShape);
                 this.selectShape(this.drawingShape);
                 this.saveState();
+                
+                // Switch back to select tool automatically
+                this.setTool('select');
+                if (window.app) {
+                    window.app.setActiveTool('selectBtn');
+                }
             }
             this.drawingShape = null;
             this.currentShapeType = null;
