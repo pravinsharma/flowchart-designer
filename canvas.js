@@ -160,29 +160,33 @@ class FlowchartCanvas {
                 // Shift+Click for multi-select
                 if (e.shiftKey) {
                     this.toggleShapeSelection(clickedShape);
+                    // Don't start dragging when Shift+Clicking
                 } else {
                     // Regular click - check if clicking on already selected shape
                     if (!clickedShape.selected) {
                         this.selectShape(clickedShape);
                     }
-                }
-                
-                // Start dragging if shape is selected
-                if (clickedShape.selected) {
-                    this.isDragging = true;
-                    this.dragStartX = pos.x - clickedShape.x;
-                    this.dragStartY = pos.y - clickedShape.y;
                     
-                    // Store initial positions for all selected shapes
-                    this.selectedShapes.forEach(shape => {
-                        shape._dragOffsetX = pos.x - shape.x;
-                        shape._dragOffsetY = pos.y - shape.y;
-                    });
+                    // Start dragging if shape is selected
+                    if (clickedShape.selected) {
+                        this.isDragging = true;
+                        this.dragStartX = pos.x - clickedShape.x;
+                        this.dragStartY = pos.y - clickedShape.y;
+                        
+                        // Store initial positions for all selected shapes
+                        this.selectedShapes.forEach(shape => {
+                            shape._dragOffsetX = pos.x - shape.x;
+                            shape._dragOffsetY = pos.y - shape.y;
+                        });
+                    }
                 }
             } else {
-                // Clicked on empty space - start box select or clear selection
+                // Clicked on empty space - start box select
+                // Clear selection only if not holding Shift
                 if (!e.shiftKey) {
-                    this.selectShape(null);
+                    this.selectedShapes.forEach(s => s.selected = false);
+                    this.selectedShapes = [];
+                    this.selectedShape = null;
                 }
                 
                 // Start box selection
@@ -237,8 +241,12 @@ class FlowchartCanvas {
             return;
         }
 
-        if (this.currentTool === 'select') {
-            if (this.isResizing && this.selectedShape) {
+                if (this.currentTool === 'select') {
+            if (this.isBoxSelecting) {
+                // Update box selection rectangle
+                this.boxSelectEnd = { x: pos.x, y: pos.y };
+                this.render();
+            } else if (this.isResizing && this.selectedShape) {
                 this.resizeShape(this.selectedShape, this.resizeHandle, pos.x, pos.y);
                 this.render();
             } else if (this.isDragging && this.selectedShapes.length > 0) {
@@ -354,10 +362,6 @@ class FlowchartCanvas {
                                         this.canvas.style.cursor = 'default';
                 }
             }
-        } else if (this.isBoxSelecting) {
-            // Update box selection rectangle
-            this.boxSelectEnd = { x: pos.x, y: pos.y };
-            this.render();
         } else if (this.isDragging && this.drawingShape) {
             // Update drawing shape
             if (this.currentShapeType === 'arrow' || this.currentShapeType === 'line') {
