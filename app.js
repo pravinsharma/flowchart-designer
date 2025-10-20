@@ -150,8 +150,9 @@ class FlowchartApp {
         });
 
         document.getElementById('exportSVG').addEventListener('click', () => {
-            alert('SVG export coming soon!');
+            this.canvas.exportAsSVG();
             this.closeModal(exportModal);
+            this.showNotification('Exported as SVG!');
         });
 
         document.getElementById('exportJSON').addEventListener('click', () => {

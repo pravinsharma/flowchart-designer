@@ -41,6 +41,7 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 ### 💾 Save & Export
 - **Export as PNG**: High-quality raster image
 - **Export as JPG**: Compressed image format
+- **Export as SVG**: Scalable vector graphics (infinite resolution)
 - **Export as JSON**: Save and load your work
 - **Save/Load**: Resume work on previous diagrams
 
@@ -145,7 +146,10 @@ Select any shape to see and edit:
 
 #### Export as Image
 1. Click "Export" button
-2. Choose format (PNG or JPG)
+2. Choose format:
+   - **PNG**: Raster image (good for screenshots)
+   - **JPG**: Compressed raster (smaller file size)
+   - **SVG**: Vector graphics (scalable, editable)
 3. Image is downloaded automatically
 
 ## Use Cases
@@ -300,11 +304,11 @@ if (e.key === 'your-key') {
 
 ## Known Limitations
 
-- SVG export not yet implemented (coming soon)
 - No shape grouping (coming soon)
 - No auto-routing for connectors (coming soon)
 - Cannot resize multiple shapes simultaneously (single shape only)
 - Connectors don't avoid overlapping shapes (manual routing)
+- SVG export is one-way (cannot re-import SVG files)
 
 ## Future Enhancements
 
@@ -316,7 +320,7 @@ if (e.key === 'your-key') {
 - [x] Grid snapping and guidelines
 - [x] Smart connectors that attach to shapes
 - [ ] Auto-routing for connectors (path finding)
-- [ ] SVG export
+- [x] SVG export
 - [ ] PDF export
 - [ ] Templates library
 - [ ] Collaborative editing

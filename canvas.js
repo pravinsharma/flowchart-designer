@@ -1601,12 +1601,52 @@ class FlowchartCanvas {
         link.click();
     }
 
-    exportAsJSON() {
+        exportAsJSON() {
         const json = JSON.stringify(this.toJSON(), null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.download = 'flowchart.json';
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    exportAsSVG() {
+        const padding = 20;
+        const bounds = this.getContentBounds();
+        
+        // Calculate dimensions
+        const contentWidth = bounds.maxX - bounds.minX + (padding * 2);
+        const contentHeight = bounds.maxY - bounds.minY + (padding * 2);
+        const offsetX = -bounds.minX + padding;
+        const offsetY = -bounds.minY + padding;
+        
+        // Build SVG
+        let svg = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+        svg += `<svg width="${contentWidth}" height="${contentHeight}" ` +
+               `xmlns="http://www.w3.org/2000/svg" ` +
+               `xmlns:xlink="http://www.w3.org/1999/xlink">\n`;
+        
+        // Add white background
+        svg += `<rect width="${contentWidth}" height="${contentHeight}" fill="white"/>\n`;
+        
+        // Create group with offset
+        svg += `<g transform="translate(${offsetX},${offsetY})">\n`;
+        
+        // Add each shape
+        this.shapes.forEach(shape => {
+            svg += shape.toSVG();
+        });
+        
+        svg += `</g>\n`;
+        svg += `</svg>`;
+        
+        // Download SVG
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'flowchart.svg';
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);

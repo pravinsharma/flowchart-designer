@@ -155,12 +155,47 @@ class Shape {
             rotation: this.rotation
         };
     }
+    
+    // Generate SVG representation
+    toSVG() {
+        // To be overridden in subclasses
+        return '';
+    }
+    
+    // Generate SVG text element
+    textToSVG() {
+        if (!this.text) return '';
+        
+        const lines = this.text.split('\n');
+        const lineHeight = this.fontSize * 1.2;
+        const startY = this.y + this.height / 2 - ((lines.length - 1) * lineHeight) / 2;
+        
+        let svg = '';
+        lines.forEach((line, i) => {
+            const y = startY + i * lineHeight;
+            const escapedText = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            svg += `<text x="${this.x + this.width / 2}" y="${y}" ` +
+                   `fill="${this.textColor}" ` +
+                   `font-size="${this.fontSize}" ` +
+                   `font-family="${this.fontFamily}" ` +
+                   `text-anchor="middle" ` +
+                   `dominant-baseline="middle">${escapedText}</text>\n`;
+        });
+        
+        return svg;
+    }
 }
 
 class Rectangle extends Shape {
     drawShape(ctx) {
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.strokeRect(this.x, this.y, this.width, this.height);
+    }
+    
+    toSVG() {
+        return `<rect x="${this.x}" y="${this.y}" width="${this.width}" height="${this.height}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
     }
 }
 
@@ -186,6 +221,14 @@ class RoundedRectangle extends Shape {
         ctx.fill();
         ctx.stroke();
     }
+    
+    toSVG() {
+        const r = Math.min(this.radius, this.width / 2, this.height / 2);
+        return `<rect x="${this.x}" y="${this.y}" width="${this.width}" height="${this.height}" ` +
+               `rx="${r}" ry="${r}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
+    }
 }
 
 class Circle extends Shape {
@@ -198,6 +241,15 @@ class Circle extends Shape {
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+    }
+    
+    toSVG() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const radius = Math.min(this.width, this.height) / 2;
+        return `<circle cx="${centerX}" cy="${centerY}" r="${radius}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
     }
 
     containsPoint(x, y) {
@@ -260,6 +312,15 @@ class Diamond extends Shape {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+    }
+    
+    toSVG() {
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const points = `${centerX},${this.y} ${this.x + this.width},${centerY} ${centerX},${this.y + this.height} ${this.x},${centerY}`;
+        return `<polygon points="${points}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
     }
 
     containsPoint(x, y) {
@@ -324,6 +385,14 @@ class Parallelogram extends Shape {
         ctx.fill();
         ctx.stroke();
     }
+    
+    toSVG() {
+        const skew = this.width * 0.15;
+        const points = `${this.x + skew},${this.y} ${this.x + this.width},${this.y} ${this.x + this.width - skew},${this.y + this.height} ${this.x},${this.y + this.height}`;
+        return `<polygon points="${points}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
+    }
 }
 
 class Document extends Shape {
@@ -348,6 +417,19 @@ class Document extends Shape {
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
+    }
+    
+    toSVG() {
+        const waveHeight = this.height * 0.1;
+        const path = `M ${this.x},${this.y} ` +
+                    `L ${this.x + this.width},${this.y} ` +
+                    `L ${this.x + this.width},${this.y + this.height - waveHeight} ` +
+                    `Q ${this.x + this.width * 0.75},${this.y + this.height - waveHeight * 2} ${this.x + this.width / 2},${this.y + this.height - waveHeight} ` +
+                    `Q ${this.x + this.width * 0.25},${this.y + this.height} ${this.x},${this.y + this.height - waveHeight} ` +
+                    `Z`;
+        return `<path d="${path}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
     }
 }
 
@@ -378,6 +460,23 @@ class Database extends Shape {
         ctx.ellipse(this.x + this.width / 2, this.y + this.height - ellipseHeight / 2,
                    this.width / 2, ellipseHeight / 2, 0, 0, Math.PI);
         ctx.stroke();
+    }
+    
+    toSVG() {
+        const ellipseHeight = this.height * 0.2;
+        const cx = this.x + this.width / 2;
+        const rx = this.width / 2;
+        const ry = ellipseHeight / 2;
+        
+        return `<ellipse cx="${cx}" cy="${this.y + ellipseHeight / 2}" rx="${rx}" ry="${ry}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               `<line x1="${this.x}" y1="${this.y + ellipseHeight / 2}" x2="${this.x}" y2="${this.y + this.height - ellipseHeight / 2}" ` +
+               `stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               `<line x1="${this.x + this.width}" y1="${this.y + ellipseHeight / 2}" x2="${this.x + this.width}" y2="${this.y + this.height - ellipseHeight / 2}" ` +
+               `stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               `<path d="M ${this.x},${this.y + this.height - ellipseHeight / 2} A ${rx},${ry} 0 0,0 ${this.x + this.width},${this.y + this.height - ellipseHeight / 2}" ` +
+               `fill="none" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
     }
 }
 
@@ -620,6 +719,36 @@ class Arrow extends Shape {
         json.waypoints = this.waypoints;
         return json;
     }
+    
+    toSVG() {
+        const headLength = 15;
+        const points = [{ x: this.x1, y: this.y1 }, ...this.waypoints, { x: this.x2, y: this.y2 }];
+        
+        // Build path for line
+        let path = `M ${this.x1},${this.y1}`;
+        this.waypoints.forEach(wp => {
+            path += ` L ${wp.x},${wp.y}`;
+        });
+        path += ` L ${this.x2},${this.y2}`;
+        
+        // Calculate arrow head angle
+        const lastPoint = this.waypoints.length > 0 ? 
+            this.waypoints[this.waypoints.length - 1] : 
+            { x: this.x1, y: this.y1 };
+        const angle = Math.atan2(this.y2 - lastPoint.y, this.x2 - lastPoint.x);
+        
+        // Arrow head points
+        const headX1 = this.x2 - headLength * Math.cos(angle - Math.PI / 6);
+        const headY1 = this.y2 - headLength * Math.sin(angle - Math.PI / 6);
+        const headX2 = this.x2 - headLength * Math.cos(angle + Math.PI / 6);
+        const headY2 = this.y2 - headLength * Math.sin(angle + Math.PI / 6);
+        
+        return `<path d="${path}" fill="none" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               `<line x1="${this.x2}" y1="${this.y2}" x2="${headX1}" y2="${headY1}" ` +
+               `stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               `<line x1="${this.x2}" y1="${this.y2}" x2="${headX2}" y2="${headY2}" ` +
+               `stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n`;
+    }
 }
 
 class Line extends Arrow {
@@ -635,6 +764,16 @@ class Line extends Arrow {
         ctx.lineTo(this.x2, this.y2);
         ctx.stroke();
     }
+    
+    toSVG() {
+        let path = `M ${this.x1},${this.y1}`;
+        this.waypoints.forEach(wp => {
+            path += ` L ${wp.x},${wp.y}`;
+        });
+        path += ` L ${this.x2},${this.y2}`;
+        
+        return `<path d="${path}" fill="none" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n`;
+    }
 }
 
 class TextBox extends Shape {
@@ -646,5 +785,18 @@ class TextBox extends Shape {
         if (this.strokeWidth > 0) {
             ctx.strokeRect(this.x, this.y, this.width, this.height);
         }
+    }
+    
+    toSVG() {
+        let svg = '';
+        if (this.fillColor !== 'transparent') {
+            svg += `<rect x="${this.x}" y="${this.y}" width="${this.width}" height="${this.height}" ` +
+                   `fill="${this.fillColor}" stroke="none"/>\n`;
+        }
+        if (this.strokeWidth > 0) {
+            svg += `<rect x="${this.x}" y="${this.y}" width="${this.width}" height="${this.height}" ` +
+                   `fill="none" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n`;
+        }
+        return svg + this.textToSVG();
     }
 }
