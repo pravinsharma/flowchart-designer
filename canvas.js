@@ -502,16 +502,120 @@ class FlowchartCanvas {
         // Draw all shapes
         this.shapes.forEach(shape => shape.draw(this.ctx));
         
-        // Draw connection points on hovered shape (when hovering or drawing connectors)
-        if (this.hoveredShape && (this.currentShapeType === 'arrow' || this.currentShapeType === 'line' || 
-            (this.isResizing && this.selectedShape && (this.selectedShape instanceof Arrow || this.selectedShape instanceof Line)) ||
-            this.currentTool === 'select')) {
+        // Draw green highlight on hovered shape when dragging connector
+        const isDraggingConnector = this.drawingShape && (this.drawingShape instanceof Arrow || this.drawingShape instanceof Line);
+        const isResizingConnector = this.isResizing && this.selectedShape && (this.selectedShape instanceof Arrow || this.selectedShape instanceof Line);
+        
+        if (this.hoveredShape && (isDraggingConnector || isResizingConnector)) {
+            this.drawGreenHighlight(this.hoveredShape);
+            this.hoveredShape.drawConnectionPoints(this.ctx);
+        } else if (this.hoveredShape && this.currentTool === 'select') {
+            // Just show connection points when hovering in select mode
             this.hoveredShape.drawConnectionPoints(this.ctx);
         }
         
-        // Draw shape being created
+        // Draw shape being created with green highlight if snapped
         if (this.drawingShape) {
-            this.drawingShape.draw(this.ctx);
+            if (isDraggingConnector && this.hoveredShape) {
+                // Draw connector in green when snapped
+                this.drawGreenConnector(this.drawingShape);
+            } else {
+                this.drawingShape.draw(this.ctx);
+            }
+        }
+        
+        // Draw green highlight on connector being resized if snapped
+        if (isResizingConnector && this.hoveredShape) {
+            this.drawGreenConnector(this.selectedShape);
+        }
+        
+        this.ctx.restore();
+    }
+    
+    // Draw green highlight around shape
+    drawGreenHighlight(shape) {
+        this.ctx.save();
+        this.ctx.strokeStyle = '#10b981'; // Green color
+        this.ctx.lineWidth = 3;
+        this.ctx.shadowColor = '#10b981';
+        this.ctx.shadowBlur = 10;
+        
+        // Draw outline based on shape type
+        if (shape instanceof Circle) {
+            const centerX = shape.x + shape.width / 2;
+            const centerY = shape.y + shape.height / 2;
+            const radius = Math.min(shape.width, shape.height) / 2;
+            this.ctx.beginPath();
+            this.ctx.arc(centerX, centerY, radius + 3, 0, Math.PI * 2);
+            this.ctx.stroke();
+        } else if (shape instanceof Diamond) {
+            const centerX = shape.x + shape.width / 2;
+            const centerY = shape.y + shape.height / 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(centerX, shape.y - 3);
+            this.ctx.lineTo(shape.x + shape.width + 3, centerY);
+            this.ctx.lineTo(centerX, shape.y + shape.height + 3);
+            this.ctx.lineTo(shape.x - 3, centerY);
+            this.ctx.closePath();
+            this.ctx.stroke();
+        } else if (shape instanceof RoundedRectangle) {
+            const r = Math.min(shape.radius || 15, shape.width / 2, shape.height / 2);
+            this.ctx.beginPath();
+            this.ctx.moveTo(shape.x + r - 3, shape.y - 3);
+            this.ctx.lineTo(shape.x + shape.width - r + 3, shape.y - 3);
+            this.ctx.arcTo(shape.x + shape.width + 3, shape.y - 3, shape.x + shape.width + 3, shape.y + r - 3, r);
+            this.ctx.lineTo(shape.x + shape.width + 3, shape.y + shape.height - r + 3);
+            this.ctx.arcTo(shape.x + shape.width + 3, shape.y + shape.height + 3, shape.x + shape.width - r + 3, shape.y + shape.height + 3, r);
+            this.ctx.lineTo(shape.x + r - 3, shape.y + shape.height + 3);
+            this.ctx.arcTo(shape.x - 3, shape.y + shape.height + 3, shape.x - 3, shape.y + shape.height - r + 3, r);
+            this.ctx.lineTo(shape.x - 3, shape.y + r - 3);
+            this.ctx.arcTo(shape.x - 3, shape.y - 3, shape.x + r - 3, shape.y - 3, r);
+            this.ctx.closePath();
+            this.ctx.stroke();
+        } else {
+            // Rectangle and other shapes
+            this.ctx.strokeRect(shape.x - 3, shape.y - 3, shape.width + 6, shape.height + 6);
+        }
+        
+        this.ctx.restore();
+    }
+    
+    // Draw connector in green
+    drawGreenConnector(connector) {
+        this.ctx.save();
+        this.ctx.strokeStyle = '#10b981'; // Green color
+        this.ctx.lineWidth = connector.strokeWidth + 1;
+        this.ctx.shadowColor = '#10b981';
+        this.ctx.shadowBlur = 8;
+        
+        if (connector instanceof Arrow) {
+            const headLength = 15;
+            const angle = Math.atan2(connector.y2 - connector.y1, connector.x2 - connector.x1);
+            
+            // Draw line
+            this.ctx.beginPath();
+            this.ctx.moveTo(connector.x1, connector.y1);
+            this.ctx.lineTo(connector.x2, connector.y2);
+            this.ctx.stroke();
+            
+            // Draw arrow head
+            this.ctx.beginPath();
+            this.ctx.moveTo(connector.x2, connector.y2);
+            this.ctx.lineTo(
+                connector.x2 - headLength * Math.cos(angle - Math.PI / 6),
+                connector.y2 - headLength * Math.sin(angle - Math.PI / 6)
+            );
+            this.ctx.moveTo(connector.x2, connector.y2);
+            this.ctx.lineTo(
+                connector.x2 - headLength * Math.cos(angle + Math.PI / 6),
+                connector.y2 - headLength * Math.sin(angle + Math.PI / 6)
+            );
+            this.ctx.stroke();
+        } else if (connector instanceof Line) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(connector.x1, connector.y1);
+            this.ctx.lineTo(connector.x2, connector.y2);
+            this.ctx.stroke();
         }
         
         this.ctx.restore();
