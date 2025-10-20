@@ -38,6 +38,11 @@ class FlowchartCanvas {
         this.guidelinesEnabled = true; // Show alignment guidelines
         this.guidelines = []; // Active guidelines: { type: 'vertical'|'horizontal', position: number }
         
+        // Box Selection
+        this.isBoxSelecting = false; // Track if doing box select
+        this.boxSelectStart = { x: 0, y: 0 }; // Box select start point
+        this.boxSelectEnd = { x: 0, y: 0 }; // Box select end point
+        
         this.init();
     }
 
@@ -175,10 +180,15 @@ class FlowchartCanvas {
                     });
                 }
             } else {
-                // Clicked on empty space - clear selection
+                // Clicked on empty space - start box select or clear selection
                 if (!e.shiftKey) {
                     this.selectShape(null);
                 }
+                
+                // Start box selection
+                this.isBoxSelecting = true;
+                this.boxSelectStart = { x: pos.x, y: pos.y };
+                this.boxSelectEnd = { x: pos.x, y: pos.y };
             }
         } else if (this.currentShapeType) {
             // Start drawing a new shape
@@ -341,9 +351,13 @@ class FlowchartCanvas {
                         this.hoveredConnector = null;
                         this.render();
                     }
-                    this.canvas.style.cursor = 'default';
+                                        this.canvas.style.cursor = 'default';
                 }
             }
+        } else if (this.isBoxSelecting) {
+            // Update box selection rectangle
+            this.boxSelectEnd = { x: pos.x, y: pos.y };
+            this.render();
         } else if (this.isDragging && this.drawingShape) {
             // Update drawing shape
             if (this.currentShapeType === 'arrow' || this.currentShapeType === 'line') {
@@ -509,7 +523,13 @@ class FlowchartCanvas {
             this.saveState();
         }
 
-                this.isDragging = false;
+                // Handle box selection completion
+        if (this.isBoxSelecting) {
+            this.completeBoxSelection(e.shiftKey);
+            this.isBoxSelecting = false;
+        }
+        
+        this.isDragging = false;
         this.isResizing = false;
         this.resizeHandle = -1;
         this.hoveredConnector = null; // Clear on mouse up
@@ -628,6 +648,56 @@ class FlowchartCanvas {
         this.selectedShape = this.selectedShapes.length > 0 ? this.selectedShapes[0] : null;
         this.render();
         this.updatePropertiesPanel();
+    }
+    
+    // Complete box selection
+    completeBoxSelection(addToSelection = false) {
+        const minX = Math.min(this.boxSelectStart.x, this.boxSelectEnd.x);
+        const maxX = Math.max(this.boxSelectStart.x, this.boxSelectEnd.x);
+        const minY = Math.min(this.boxSelectStart.y, this.boxSelectEnd.y);
+        const maxY = Math.max(this.boxSelectStart.y, this.boxSelectEnd.y);
+        
+        // Check if box has meaningful size (> 5 pixels)
+        const boxWidth = maxX - minX;
+        const boxHeight = maxY - minY;
+        if (boxWidth < 5 && boxHeight < 5) {
+            return; // Too small, ignore
+        }
+        
+        // Clear existing selection if not adding
+        if (!addToSelection) {
+            this.selectedShapes.forEach(s => s.selected = false);
+            this.selectedShapes = [];
+        }
+        
+        // Find all shapes within the box
+        this.shapes.forEach(shape => {
+            if (this.isShapeInBox(shape, minX, minY, maxX, maxY)) {
+                if (!shape.selected) {
+                    shape.selected = true;
+                    this.selectedShapes.push(shape);
+                }
+            }
+        });
+        
+        // Update selectedShape for backward compatibility
+        this.selectedShape = this.selectedShapes.length > 0 ? this.selectedShapes[this.selectedShapes.length - 1] : null;
+        this.updatePropertiesPanel();
+    }
+    
+    // Check if shape intersects with selection box
+    isShapeInBox(shape, minX, minY, maxX, maxY) {
+        if (shape instanceof Arrow || shape instanceof Line) {
+            // For connectors, check if any point is in the box
+            const points = [{ x: shape.x1, y: shape.y1 }, ...shape.waypoints, { x: shape.x2, y: shape.y2 }];
+            return points.some(p => p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY);
+        } else {
+            // For regular shapes, check if shape intersects with box
+            return !(shape.x + shape.width < minX || 
+                    shape.x > maxX || 
+                    shape.y + shape.height < minY || 
+                    shape.y > maxY);
+        }
     }
 
     getShapeAtPoint(x, y) {
@@ -813,6 +883,11 @@ class FlowchartCanvas {
             this.drawGuidelines();
         }
         
+        // Draw box selection rectangle
+        if (this.isBoxSelecting) {
+            this.drawBoxSelection();
+        }
+        
         this.ctx.restore();
     }
     
@@ -945,6 +1020,28 @@ class FlowchartCanvas {
         });
         
         return guidelines;
+    }
+    
+    // Draw box selection rectangle
+    drawBoxSelection() {
+        const minX = Math.min(this.boxSelectStart.x, this.boxSelectEnd.x);
+        const maxX = Math.max(this.boxSelectStart.x, this.boxSelectEnd.x);
+        const minY = Math.min(this.boxSelectStart.y, this.boxSelectEnd.y);
+        const maxY = Math.max(this.boxSelectStart.y, this.boxSelectEnd.y);
+        
+        this.ctx.save();
+        
+        // Draw filled rectangle with transparency
+        this.ctx.fillStyle = 'rgba(102, 126, 234, 0.1)'; // Light purple
+        this.ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+        
+        // Draw border
+        this.ctx.strokeStyle = '#667eea'; // Purple
+        this.ctx.lineWidth = 2 / this.zoom; // Constant width at any zoom
+        this.ctx.setLineDash([5 / this.zoom, 5 / this.zoom]);
+        this.ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+        
+        this.ctx.restore();
     }
     
     // Apply guideline snapping to shape position

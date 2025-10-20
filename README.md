@@ -20,7 +20,7 @@ A professional flowchart diagramming tool built with HTML5 Canvas. Create beauti
 
 ### 🎯 Editing Features
 - **Drag & Drop**: Add shapes from palette to canvas
-- **Multi-Select**: Shift+Click to select multiple shapes, Ctrl+A for all
+- **Multi-Select**: Shift+Click to select multiple, box select (drag rectangle), Ctrl+A for all
 - **Resize**: Drag handles to resize shapes
 - **Move**: Click and drag to reposition (works with multiple selections)
 - **Grid Snapping**: Automatically align shapes to grid intersections
@@ -317,7 +317,7 @@ if (e.key === 'your-key') {
 
 ### Planned Features
 - [x] Multi-select with Shift+Click
-- [ ] Box select (drag rectangle to select multiple)
+- [x] Box select (drag rectangle to select multiple)
 - [ ] Shape grouping and ungrouping
 - [ ] Alignment tools (align left, center, right, etc.)
 - [ ] Distribution tools (space evenly)
