@@ -957,8 +957,15 @@ class FlowchartCanvas {
             this.drawGrid();
         }
         
-        // Draw all shapes
-        this.shapes.forEach(shape => shape.draw(this.ctx));
+        // Sort shapes to draw connectors first, then other shapes
+        const connectors = this.shapes.filter(shape => shape instanceof Arrow || shape instanceof Line);
+        const otherShapes = this.shapes.filter(shape => !(shape instanceof Arrow || shape instanceof Line));
+        
+        // Draw connectors first (behind other shapes)
+        connectors.forEach(shape => shape.draw(this.ctx));
+        
+        // Then draw all other shapes
+        otherShapes.forEach(shape => shape.draw(this.ctx));
         
         // Draw green highlight on hovered shape when dragging connector
         const isDraggingConnector = this.drawingShape && (this.drawingShape instanceof Arrow || this.drawingShape instanceof Line);
