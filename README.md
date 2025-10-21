@@ -330,7 +330,7 @@ if (e.key === 'your-key') {
 - [ ] Collaborative editing
 - [ ] Cloud save
 - [ ] Shape library expansion
-- [ ] Themes (dark mode)
+- [x] Themes (dark mode)
 - [ ] Layers panel
 - [x] Comments and annotations
 
