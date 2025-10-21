@@ -95,6 +95,9 @@
                 </div>
             </div>
             <div class="header-right">
+                <button id="toggleCommentsBtn" class="btn btn-secondary" title="Toggle Comments Panel (Alt+C)">
+                    <i class="fas fa-comments"></i>
+                </button>
                 <button id="exportBtn" class="btn btn-primary">
                     <i class="fas fa-download"></i> Export
                 </button>
@@ -184,6 +187,25 @@
                         </div>
                     </div>
 
+                    <!-- Annotations -->
+                    <div class="palette-section">
+                        <h4>Annotations</h4>
+                        <div class="shape-grid">
+                            <div class="shape-item" data-shape="comment" title="Add Comment (C)">
+                                <div class="shape-preview comment-preview">
+                                    <i class="fas fa-comment"></i>
+                                </div>
+                                <span>Comment</span>
+                            </div>
+                            <div class="shape-item" data-shape="highlight" title="Add Highlight Area">
+                                <div class="shape-preview highlight-preview">
+                                    <i class="fas fa-highlighter"></i>
+                                </div>
+                                <span>Highlight</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Text -->
                     <div class="palette-section">
                         <h4>Text</h4>
@@ -224,6 +246,9 @@
             <div class="context-item" id="ctxEdit">
                 <i class="fas fa-edit"></i> Edit Text
             </div>
+            <div class="context-item" id="ctxAddComment">
+                <i class="fas fa-comment"></i> Add Comment
+            </div>
             <div class="context-item" id="ctxDuplicate">
                 <i class="fas fa-copy"></i> Duplicate
             </div>
@@ -246,6 +271,40 @@
                 <i class="fas fa-trash"></i> Delete
             </div>
         </div>
+
+        <!-- Comments Panel -->
+        <aside class="comments-panel" id="commentsPanel">
+            <div class="comments-header">
+                <h3><i class="fas fa-comments"></i> Comments</h3>
+                <div class="comments-filters">
+                    <select id="commentTypeFilter">
+                        <option value="all">All Types</option>
+                        <option value="sticky">Sticky Notes</option>
+                        <option value="shape">Shape Comments</option>
+                        <option value="connector">Connector Comments</option>
+                    </select>
+                    <select id="commentStatusFilter">
+                        <option value="all">All Status</option>
+                        <option value="unread">Unread</option>
+                        <option value="read">Read</option>
+                    </select>
+                    <input type="text" id="commentSearch" placeholder="Search comments...">
+                </div>
+                <button id="closeCommentsBtn" class="close-btn">×</button>
+            </div>
+            <div class="comments-content" id="commentsContent">
+                <!-- Comments will be added here dynamically -->
+            </div>
+            <div class="comments-footer">
+                <label>
+                    <input type="checkbox" id="showCommentsCheckbox" checked>
+                    Show Comments
+                </label>
+                <button id="exportCommentsBtn" class="btn btn-secondary">
+                    <i class="fas fa-file-export"></i> Export Comments
+                </button>
+            </div>
+        </aside>
     </div>
 
     <!-- Text Edit Modal -->

@@ -779,6 +779,166 @@ class Line extends Arrow {
     }
 }
 
+class Comment extends Shape {
+    constructor(x, y, width = 200, height = 150) {
+        super(x, y, width, height);
+        this.fillColor = '#FFF9C4';  // Light yellow
+        this.strokeColor = '#FBC02D'; // Dark yellow
+        this.text = 'Add comment here...';
+        this.author = '';
+        this.timestamp = new Date().toISOString();
+        this.isMinimized = false;
+        this.type = 'sticky'; // 'sticky', 'shape', 'connector'
+        this.targetId = null; // ID of the target shape/connector
+        this.priority = 'normal'; // 'low', 'normal', 'high'
+        this.status = 'unread'; // 'unread', 'read'
+        this.offsetX = 0; // Offset from target shape (if attached)
+        this.offsetY = 0;
+    }
+
+    drawShape(ctx) {
+        if (this.isMinimized) {
+            // Draw minimized icon
+            ctx.save();
+            ctx.fillStyle = this.fillColor;
+            ctx.strokeStyle = this.strokeColor;
+            const iconSize = 24;
+            ctx.beginPath();
+            ctx.arc(this.x + iconSize/2, this.y + iconSize/2, iconSize/2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = this.strokeColor;
+            ctx.font = '16px FontAwesome';
+            ctx.fillText('', this.x + 6, this.y + 18);
+            ctx.restore();
+        } else {
+            // Draw comment box with folded corner
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + this.width - 15, this.y);
+            ctx.lineTo(this.x + this.width, this.y + 15);
+            ctx.lineTo(this.x + this.width, this.y + this.height);
+            ctx.lineTo(this.x, this.y + this.height);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Draw folded corner
+            ctx.beginPath();
+            ctx.moveTo(this.x + this.width - 15, this.y);
+            ctx.lineTo(this.x + this.width - 15, this.y + 15);
+            ctx.lineTo(this.x + this.width, this.y + 15);
+            ctx.stroke();
+
+            // Draw header with author and timestamp
+            if (this.author) {
+                ctx.save();
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#666';
+                ctx.fillText(
+                    `${this.author} - ${new Date(this.timestamp).toLocaleString()}`,
+                    this.x + 8,
+                    this.y + 16
+                );
+                ctx.restore();
+            }
+
+            // Draw priority indicator if not normal
+            if (this.priority !== 'normal') {
+                ctx.save();
+                ctx.fillStyle = this.priority === 'high' ? '#f44336' : '#90CAF9';
+                ctx.beginPath();
+                ctx.arc(this.x + 8, this.y + 8, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // Draw minimize button
+            ctx.save();
+            ctx.fillStyle = '#666';
+            ctx.font = '14px FontAwesome';
+            ctx.fillText('', this.x + this.width - 35, this.y + 15);
+            ctx.restore();
+        }
+    }
+
+    containsPoint(x, y) {
+        if (this.isMinimized) {
+            const iconSize = 24;
+            const dx = x - (this.x + iconSize/2);
+            const dy = y - (this.y + iconSize/2);
+            return (dx * dx + dy * dy) <= (iconSize/2 * iconSize/2);
+        }
+        return super.containsPoint(x, y);
+    }
+
+    toJSON() {
+        const json = super.toJSON();
+        json.author = this.author;
+        json.timestamp = this.timestamp;
+        json.isMinimized = this.isMinimized;
+        json.type = this.type;
+        json.targetId = this.targetId;
+        json.priority = this.priority;
+        json.status = this.status;
+        json.offsetX = this.offsetX;
+        json.offsetY = this.offsetY;
+        return json;
+    }
+
+    toSVG() {
+        if (this.isMinimized) {
+            const iconSize = 24;
+            return `<circle cx="${this.x + iconSize/2}" cy="${this.y + iconSize/2}" r="${iconSize/2}" ` +
+                   `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n`;
+        }
+        
+        const path = `M ${this.x},${this.y} ` +
+                    `L ${this.x + this.width - 15},${this.y} ` +
+                    `L ${this.x + this.width},${this.y + 15} ` +
+                    `L ${this.x + this.width},${this.y + this.height} ` +
+                    `L ${this.x},${this.y + this.height} Z`;
+        
+        return `<path d="${path}" fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               `<path d="M ${this.x + this.width - 15},${this.y} L ${this.x + this.width - 15},${this.y + 15} L ${this.x + this.width},${this.y + 15}" ` +
+               `fill="none" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n` +
+               this.textToSVG();
+    }
+}
+
+class AreaHighlight extends Shape {
+    constructor(x, y, width, height) {
+        super(x, y, width, height);
+        this.fillColor = 'rgba(102, 126, 234, 0.2)';  // Semi-transparent blue
+        this.strokeColor = '#667eea';
+        this.strokeWidth = 2;
+        this.strokeDash = [5, 5];
+    }
+
+    drawShape(ctx) {
+        ctx.save();
+        ctx.fillStyle = this.fillColor;
+        ctx.strokeStyle = this.strokeColor;
+        ctx.lineWidth = this.strokeWidth;
+        ctx.setLineDash(this.strokeDash);
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.strokeRect(this.x, this.y, this.width, this.height);
+        ctx.restore();
+    }
+
+    toJSON() {
+        const json = super.toJSON();
+        json.strokeDash = this.strokeDash;
+        return json;
+    }
+
+    toSVG() {
+        return `<rect x="${this.x}" y="${this.y}" width="${this.width}" height="${this.height}" ` +
+               `fill="${this.fillColor}" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}" ` +
+               `stroke-dasharray="${this.strokeDash.join(' ')}"/>\n`;
+    }
+}
+
 class TextBox extends Shape {
     drawShape(ctx) {
         // Text box has transparent fill by default
