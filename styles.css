@@ -269,12 +269,46 @@ body {
 
 /* Palette */
 .palette {
-    width: 200px; /* reduced width for compact layout */
+    width: 200px; /* compact width */
     background: var(--bg-secondary);
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     box-shadow: 2px 0 10px var(--shadow);
+    transition: width 0.3s cubic-bezier(.2,.8,.2,1);
+}
+
+.palette.expanded {
+    width: 280px; /* expanded width */
+}
+
+.palette-header {
+    padding: 8px 6px 2px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.palette-toggle {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.palette-toggle:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.palette.expanded .palette-toggle i {
+    transform: rotate(180deg);
 }
 
 .palette-content {
@@ -485,6 +519,15 @@ body {
     font-size: 0.7em; /* slightly smaller label */
     color: var(--text-secondary);
     text-align: center;
+    transition: font-size 0.3s cubic-bezier(.2,.8,.2,1);
+}
+
+.palette.expanded .shape-item {
+    padding: 10px 8px;
+}
+
+.palette.expanded .shape-item span {
+    font-size: 0.75em;
 }
 
 /* Canvas Area */

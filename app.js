@@ -10,6 +10,7 @@ class FlowchartApp {
     init() {
         this.setupTheme();
         this.setupToolbar();
+        this.setupPaletteToggle();
         this.setupPalette();
         this.setupModals();
         this.setupContextMenu();
@@ -152,6 +153,7 @@ class FlowchartApp {
     }
 
     setupPalette() {
+        // Set up shape item click handlers
         const shapeItems = document.querySelectorAll('.shape-item');
         shapeItems.forEach(item => {
             item.addEventListener('click', () => {
@@ -159,6 +161,36 @@ class FlowchartApp {
                 this.canvas.setShapeType(shapeType);
                 this.setActiveTool('selectBtn'); // Visual feedback
             });
+        });
+
+        // Set up collapsible sections
+        const paletteSections = document.querySelectorAll('.palette-section');
+        paletteSections.forEach(section => {
+            const header = section.querySelector('h4');
+            header.addEventListener('click', () => {
+                section.classList.toggle('collapsed');
+                // Store the collapsed state
+                const sectionName = header.textContent.trim();
+                const collapsedSections = JSON.parse(localStorage.getItem('collapsedSections') || '[]');
+                if (section.classList.contains('collapsed')) {
+                    if (!collapsedSections.includes(sectionName)) {
+                        collapsedSections.push(sectionName);
+                    }
+                } else {
+                    const index = collapsedSections.indexOf(sectionName);
+                    if (index > -1) {
+                        collapsedSections.splice(index, 1);
+                    }
+                }
+                localStorage.setItem('collapsedSections', JSON.stringify(collapsedSections));
+            });
+
+            // Restore collapsed state
+            const sectionName = header.textContent.trim();
+            const collapsedSections = JSON.parse(localStorage.getItem('collapsedSections') || '[]');
+            if (collapsedSections.includes(sectionName)) {
+                section.classList.add('collapsed');
+            }
         });
     }
 
@@ -397,6 +429,22 @@ class FlowchartApp {
     setupPropertiesPanel() {
         document.getElementById('closePropsBtn').addEventListener('click', () => {
             document.getElementById('propertiesPanel').classList.remove('active');
+        });
+    }
+
+    setupPaletteToggle() {
+        const palette = document.querySelector('.palette');
+        const toggleBtn = document.getElementById('paletteToggleBtn');
+        
+        // Restore saved state
+        const isExpanded = localStorage.getItem('paletteExpanded') === 'true';
+        if (isExpanded) {
+            palette.classList.add('expanded');
+        }
+        
+        toggleBtn.addEventListener('click', () => {
+            palette.classList.toggle('expanded');
+            localStorage.setItem('paletteExpanded', palette.classList.contains('expanded'));
         });
     }
 

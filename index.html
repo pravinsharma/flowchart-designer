@@ -130,26 +130,33 @@
         <div class="main-content">
             <!-- Left Palette -->
             <aside class="palette">
+                <div class="palette-header">
+                    <button id="paletteToggleBtn" class="palette-toggle" title="Toggle palette size">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
                 <div class="palette-content">
                     <!-- Basic Shapes -->
                     <div class="palette-section">
                         <h4>Basic Shapes</h4>
-                        <div class="shape-grid">
-                            <div class="shape-item" data-shape="rectangle" title="Rectangle">
-                                <div class="shape-preview rectangle-preview"></div>
-                                <span>Rectangle</span>
-                            </div>
-                            <div class="shape-item" data-shape="rounded" title="Rounded Rectangle">
-                                <div class="shape-preview rounded-preview"></div>
-                                <span>Rounded</span>
-                            </div>
-                            <div class="shape-item" data-shape="circle" title="Circle">
-                                <div class="shape-preview circle-preview"></div>
-                                <span>Circle</span>
-                            </div>
-                            <div class="shape-item" data-shape="diamond" title="Diamond">
-                                <div class="shape-preview diamond-preview"></div>
-                                <span>Diamond</span>
+                        <div class="section-content">
+                            <div class="shape-grid">
+                                <div class="shape-item" data-shape="rectangle" title="Rectangle">
+                                    <div class="shape-preview rectangle-preview"></div>
+                                    <span>Rectangle</span>
+                                </div>
+                                <div class="shape-item" data-shape="rounded" title="Rounded Rectangle">
+                                    <div class="shape-preview rounded-preview"></div>
+                                    <span>Rounded</span>
+                                </div>
+                                <div class="shape-item" data-shape="circle" title="Circle">
+                                    <div class="shape-preview circle-preview"></div>
+                                    <span>Circle</span>
+                                </div>
+                                <div class="shape-item" data-shape="diamond" title="Diamond">
+                                    <div class="shape-preview diamond-preview"></div>
+                                    <span>Diamond</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -157,30 +164,32 @@
                     <!-- Flowchart Shapes -->
                     <div class="palette-section">
                         <h4>Flowchart</h4>
-                        <div class="shape-grid">
-                            <div class="shape-item" data-shape="process" title="Process">
-                                <div class="shape-preview rectangle-preview"></div>
-                                <span>Process</span>
-                            </div>
-                            <div class="shape-item" data-shape="decision" title="Decision">
-                                <div class="shape-preview diamond-preview"></div>
-                                <span>Decision</span>
-                            </div>
-                            <div class="shape-item" data-shape="terminator" title="Terminator">
-                                <div class="shape-preview rounded-preview"></div>
-                                <span>Terminator</span>
-                            </div>
-                            <div class="shape-item" data-shape="data" title="Data/Input">
-                                <div class="shape-preview parallelogram-preview"></div>
-                                <span>Data</span>
-                            </div>
-                            <div class="shape-item" data-shape="document" title="Document">
-                                <div class="shape-preview document-preview"></div>
-                                <span>Document</span>
-                            </div>
-                            <div class="shape-item" data-shape="database" title="Database">
-                                <div class="shape-preview database-preview"></div>
-                                <span>Database</span>
+                        <div class="section-content">
+                            <div class="shape-grid">
+                                <div class="shape-item" data-shape="process" title="Process">
+                                    <div class="shape-preview rectangle-preview"></div>
+                                    <span>Process</span>
+                                </div>
+                                <div class="shape-item" data-shape="decision" title="Decision">
+                                    <div class="shape-preview diamond-preview"></div>
+                                    <span>Decision</span>
+                                </div>
+                                <div class="shape-item" data-shape="terminator" title="Terminator">
+                                    <div class="shape-preview rounded-preview"></div>
+                                    <span>Terminator</span>
+                                </div>
+                                <div class="shape-item" data-shape="data" title="Data/Input">
+                                    <div class="shape-preview parallelogram-preview"></div>
+                                    <span>Data</span>
+                                </div>
+                                <div class="shape-item" data-shape="document" title="Document">
+                                    <div class="shape-preview document-preview"></div>
+                                    <span>Document</span>
+                                </div>
+                                <div class="shape-item" data-shape="database" title="Database">
+                                    <div class="shape-preview database-preview"></div>
+                                    <span>Database</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -188,14 +197,16 @@
                     <!-- Connectors -->
                     <div class="palette-section">
                         <h4>Connectors</h4>
-                        <div class="shape-grid">
-                            <div class="shape-item" data-shape="arrow" title="Arrow">
-                                <div class="shape-preview arrow-preview"></div>
-                                <span>Arrow</span>
-                            </div>
-                            <div class="shape-item" data-shape="line" title="Line">
-                                <div class="shape-preview line-preview"></div>
-                                <span>Line</span>
+                        <div class="section-content">
+                            <div class="shape-grid">
+                                <div class="shape-item" data-shape="arrow" title="Arrow">
+                                    <div class="shape-preview arrow-preview"></div>
+                                    <span>Arrow</span>
+                                </div>
+                                <div class="shape-item" data-shape="line" title="Line">
+                                    <div class="shape-preview line-preview"></div>
+                                    <span>Line</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -203,18 +214,20 @@
                     <!-- Annotations -->
                     <div class="palette-section">
                         <h4>Annotations</h4>
-                        <div class="shape-grid">
-                            <div class="shape-item" data-shape="comment" title="Add Comment (C)">
-                                <div class="shape-preview comment-preview">
-                                    <i class="fas fa-comment"></i>
+                        <div class="section-content">
+                            <div class="shape-grid">
+                                <div class="shape-item" data-shape="comment" title="Add Comment (C)">
+                                    <div class="shape-preview comment-preview">
+                                        <i class="fas fa-comment"></i>
+                                    </div>
+                                    <span>Comment</span>
                                 </div>
-                                <span>Comment</span>
-                            </div>
-                            <div class="shape-item" data-shape="highlight" title="Add Highlight Area">
-                                <div class="shape-preview highlight-preview">
-                                    <i class="fas fa-highlighter"></i>
+                                <div class="shape-item" data-shape="highlight" title="Add Highlight Area">
+                                    <div class="shape-preview highlight-preview">
+                                        <i class="fas fa-highlighter"></i>
+                                    </div>
+                                    <span>Highlight</span>
                                 </div>
-                                <span>Highlight</span>
                             </div>
                         </div>
                     </div>
@@ -222,12 +235,14 @@
                     <!-- Text -->
                     <div class="palette-section">
                         <h4>Text</h4>
-                        <div class="shape-grid">
-                            <div class="shape-item" data-shape="text" title="Text Box">
-                                <div class="shape-preview text-preview">
-                                    <i class="fas fa-font"></i>
+                        <div class="section-content">
+                            <div class="shape-grid">
+                                <div class="shape-item" data-shape="text" title="Text Box">
+                                    <div class="shape-preview text-preview">
+                                        <i class="fas fa-font"></i>
+                                    </div>
+                                    <span>Text</span>
                                 </div>
-                                <span>Text</span>
                             </div>
                         </div>
                     </div>
