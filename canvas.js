@@ -529,8 +529,14 @@ class FlowchartCanvas {
                 // Select the newly created shape, otherwise select the connector
                 if (newShapeCreated) {
                     this.selectShape(newShapeCreated);
+                    // Automatically enter text mode for new endpoint shape
+                    this.editShapeText(newShapeCreated);
                 } else {
                     this.selectShape(this.drawingShape);
+                    // Automatically enter text mode if it's not a connector
+                    if (!(this.drawingShape instanceof Arrow || this.drawingShape instanceof Line)) {
+                        this.editShapeText(this.drawingShape);
+                    }
                 }
                 this.saveState();
                 
