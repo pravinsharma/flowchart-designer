@@ -69,6 +69,15 @@ class FlowchartApp {
             this.toggleButtonState('guidelinesBtn', enabled);
         });
 
+        // Grouping
+        document.getElementById('groupBtn').addEventListener('click', () => {
+            this.canvas.groupShapes();
+        });
+
+        document.getElementById('ungroupBtn').addEventListener('click', () => {
+            this.canvas.ungroupShapes();
+        });
+
         // Delete and Clear
         document.getElementById('deleteBtn').addEventListener('click', () => {
             this.canvas.deleteSelected();
@@ -194,7 +203,10 @@ class FlowchartApp {
             const shape = this.canvas.getShapeAtPoint(pos.x, pos.y);
             
             if (shape) {
-                this.canvas.selectShape(shape);
+                // Only select the shape if it's not already part of the current selection
+                if (!shape.selected) {
+                    this.canvas.selectShape(shape);
+                }
                 contextMenu.style.left = e.clientX + 'px';
                 contextMenu.style.top = e.clientY + 'px';
                 contextMenu.classList.add('active');
@@ -215,6 +227,14 @@ class FlowchartApp {
             if (this.canvas.selectedShapes.length > 0) {
                 this.canvas.duplicateShape(this.canvas.selectedShape);
             }
+        });
+
+        document.getElementById('ctxGroup').addEventListener('click', () => {
+            this.canvas.groupShapes();
+        });
+
+        document.getElementById('ctxUngroup').addEventListener('click', () => {
+            this.canvas.ungroupShapes();
         });
 
         document.getElementById('ctxBringFront').addEventListener('click', () => {
@@ -271,9 +291,16 @@ class FlowchartApp {
                 this.canvas.resetZoom();
             }
             
-            // Grid and Guidelines shortcuts
+            // Grouping shortcuts
             if (e.key === 'g' || e.key === 'G') {
-                if (!e.ctrlKey && !e.metaKey) {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        this.canvas.ungroupShapes();
+                    } else {
+                        this.canvas.groupShapes();
+                    }
+                } else {
                     document.getElementById('gridBtn').click();
                 }
             } else if (e.key === 's' || e.key === 'S') {

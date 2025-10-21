@@ -269,6 +269,11 @@ class FlowchartCanvas {
                 primaryShape.x = newX;
                 primaryShape.y = newY;
                 
+                                // Update child shapes if this is a group (BEFORE snapping)
+                if (primaryShape instanceof Group) {
+                    primaryShape.updateChildPositions();
+                }
+                
                 // Apply guideline snapping if enabled (but not for connectors)
                 if (!(primaryShape instanceof Arrow || primaryShape instanceof Line)) {
                     this.applyGuidelineSnapping(primaryShape);
@@ -286,6 +291,11 @@ class FlowchartCanvas {
                         shape.x = pos.x - shape._dragOffsetX + actualDeltaX;
                         shape.y = pos.y - shape._dragOffsetY + actualDeltaY;
                         
+                        // Update child shapes if this is a group
+                        if (shape instanceof Group) {
+                            shape.updateChildPositions();
+                        }
+                        
                         // Update endpoints for Arrow/Line shapes
                         if (shape.updateEndpoints) {
                             shape.updateEndpoints();
@@ -297,6 +307,16 @@ class FlowchartCanvas {
                 if (primaryShape.updateEndpoints) {
                     primaryShape.updateEndpoints();
                 }
+                
+                // Update child positions AGAIN after snapping to ensure consistency
+                if (primaryShape instanceof Group) {
+                    primaryShape.updateChildPositions();
+                }
+                this.selectedShapes.forEach(shape => {
+                    if (shape !== primaryShape && shape instanceof Group) {
+                        shape.updateChildPositions();
+                    }
+                });
                 
                 // Update all connector connections when shapes move
                 this.updateAllConnections();
@@ -650,6 +670,78 @@ class FlowchartCanvas {
         this.selectedShapes = [...this.shapes];
         this.shapes.forEach(shape => shape.selected = true);
         this.selectedShape = this.selectedShapes.length > 0 ? this.selectedShapes[0] : null;
+        this.render();
+        this.updatePropertiesPanel();
+    }
+    
+    // Group selected shapes
+    groupShapes() {
+        if (this.selectedShapes.length < 2) {
+            alert('Select at least 2 shapes to create a group');
+            return;
+        }
+        
+        // Create group from selected shapes
+        const group = new Group([...this.selectedShapes]);
+        
+        // Remove individual shapes from canvas
+        this.selectedShapes.forEach(shape => {
+            const index = this.shapes.indexOf(shape);
+            if (index > -1) {
+                this.shapes.splice(index, 1);
+            }
+        });
+        
+                // Add group to canvas
+        this.shapes.push(group);
+        
+        // Update all connector connections after grouping
+        this.updateAllConnections();
+        
+        // Select the group
+        this.selectShape(group);
+        this.saveState();
+        this.render();
+    }
+    
+    // Ungroup selected group
+    ungroupShapes() {
+        if (!this.selectedShape || !(this.selectedShape instanceof Group)) {
+            alert('Select a group to ungroup');
+            return;
+        }
+        
+        const group = this.selectedShape;
+        
+        // Update child positions one final time
+        group.updateChildPositions();
+        
+        // Get all child shapes
+        const childShapes = [...group.shapes];
+        
+        // Remove group from canvas
+        const index = this.shapes.indexOf(group);
+        if (index > -1) {
+            this.shapes.splice(index, 1);
+        }
+        
+        // Add child shapes back to canvas
+        childShapes.forEach(shape => {
+            // Clear group offsets
+            delete shape._groupOffsetX;
+            delete shape._groupOffsetY;
+            this.shapes.push(shape);
+        });
+        
+                // Select the ungrouped shapes
+        this.selectedShapes = childShapes;
+        childShapes.forEach(shape => shape.selected = true);
+        this.selectedShape = childShapes[0];
+        
+        // Update all connector connections after ungrouping
+        this.updateAllConnections();
+        
+        this.saveState();
         this.render();
         this.updatePropertiesPanel();
     }
@@ -1251,12 +1343,15 @@ class FlowchartCanvas {
         this.render();
     }
 
-    // Find nearest connection point within snap distance
+        // Find nearest connection point within snap distance
     findNearestConnectionPoint(x, y, excludeShape) {
         let nearest = null;
         let minDistance = this.snapDistance / this.zoom; // Adjust for zoom level
         
-        for (const shape of this.shapes) {
+        // Get all shapes including those inside groups
+        const allShapes = this.getAllShapesIncludingGrouped();
+        
+        for (const shape of allShapes) {
             if (shape === excludeShape || shape instanceof Arrow || shape instanceof Line) continue;
             
             const points = shape.getConnectionPoints();
@@ -1325,9 +1420,26 @@ class FlowchartCanvas {
     updateAllConnections() {
         this.shapes.forEach(shape => {
             if (shape instanceof Arrow || shape instanceof Line) {
-                shape.updateConnections(this.shapes);
+                shape.updateConnections(this.shapes, this.getAllShapesIncludingGrouped());
             }
         });
+    }
+    
+    // Get all shapes including those inside groups
+    getAllShapesIncludingGrouped() {
+        const allShapes = [];
+        
+        const collectShapes = (shapes) => {
+            shapes.forEach(shape => {
+                allShapes.push(shape);
+                if (shape instanceof Group) {
+                    collectShapes(shape.shapes);
+                }
+            });
+        };
+        
+        collectShapes(this.shapes);
+        return allShapes;
     }
 
         deleteSelected() {
@@ -1478,7 +1590,7 @@ class FlowchartCanvas {
         };
     }
 
-    shapeFromJSON(json) {
+        shapeFromJSON(json) {
         const shapeMap = {
             'Rectangle': Rectangle,
             'RoundedRectangle': RoundedRectangle,
@@ -1489,25 +1601,32 @@ class FlowchartCanvas {
             'Database': Database,
             'Arrow': Arrow,
             'Line': Line,
-            'TextBox': TextBox
+            'TextBox': TextBox,
+            'Group': Group
         };
 
         const ShapeClass = shapeMap[json.type] || Rectangle;
         let shape;
         
-        if (json.type === 'Arrow' || json.type === 'Line') {
+        if (json.type === 'Group') {
+            // Reconstruct group from child shapes
+            const childShapes = json.shapes.map(s => this.shapeFromJSON(s));
+            shape = new Group(childShapes);
+            Object.assign(shape, json);
+        } else if (json.type === 'Arrow' || json.type === 'Line') {
             shape = new ShapeClass(json.x1, json.y1, json.x2, json.y2);
+            Object.assign(shape, json);
+            // Restore connections for Arrow/Line
+            if (json.startConnection || json.endConnection) {
+                shape.startConnection = json.startConnection;
+                shape.endConnection = json.endConnection;
+                shape.updateConnections(this.shapes);
+            }
         } else {
             shape = new ShapeClass(json.x, json.y, json.width, json.height);
+            Object.assign(shape, json);
         }
         
-        Object.assign(shape, json);
-        // Restore connections for Arrow/Line
-        if ((json.type === 'Arrow' || json.type === 'Line') && (json.startConnection || json.endConnection)) {
-            shape.startConnection = json.startConnection;
-            shape.endConnection = json.endConnection;
-            shape.updateConnections(this.shapes);
-        }
         return shape;
     }
 

@@ -676,9 +676,12 @@ class Arrow extends Shape {
     }
 
     // Update connections when shapes move
-    updateConnections(shapes) {
+    updateConnections(shapes, allShapes = null) {
+        // Use allShapes if provided (includes shapes inside groups), otherwise use shapes
+        const searchShapes = allShapes || shapes;
+        
         if (this.startConnection) {
-            const shape = shapes.find(s => s.id === this.startConnection.shapeId);
+            const shape = searchShapes.find(s => s.id === this.startConnection.shapeId);
             if (shape) {
                 const point = shape.getConnectionPoints().find(p => p.position === this.startConnection.position);
                 if (point) {
@@ -688,7 +691,7 @@ class Arrow extends Shape {
             }
         }
         if (this.endConnection) {
-            const shape = shapes.find(s => s.id === this.endConnection.shapeId);
+            const shape = searchShapes.find(s => s.id === this.endConnection.shapeId);
             if (shape) {
                 const point = shape.getConnectionPoints().find(p => p.position === this.endConnection.position);
                 if (point) {
@@ -798,5 +801,102 @@ class TextBox extends Shape {
                    `fill="none" stroke="${this.strokeColor}" stroke-width="${this.strokeWidth}"/>\n`;
         }
         return svg + this.textToSVG();
+    }
+}
+
+// Group class for grouped shapes
+class Group extends Shape {
+    constructor(shapes) {
+        // Calculate bounding box of all shapes
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        shapes.forEach(shape => {
+            if (shape instanceof Arrow || shape instanceof Line) {
+                minX = Math.min(minX, shape.x1, shape.x2);
+                minY = Math.min(minY, shape.y1, shape.y2);
+                maxX = Math.max(maxX, shape.x1, shape.x2);
+                maxY = Math.max(maxY, shape.y1, shape.y2);
+            } else {
+                minX = Math.min(minX, shape.x);
+                minY = Math.min(minY, shape.y);
+                maxX = Math.max(maxX, shape.x + shape.width);
+                maxY = Math.max(maxY, shape.y + shape.height);
+            }
+        });
+        
+        super(minX, minY, maxX - minX, maxY - minY);
+        
+        this.shapes = shapes;
+        this.fillColor = 'transparent';
+        this.strokeColor = '#667eea';
+        this.strokeWidth = 2;
+        
+        // Store original positions relative to group
+        this.shapes.forEach(shape => {
+            shape._groupOffsetX = shape.x - this.x;
+            shape._groupOffsetY = shape.y - this.y;
+        });
+    }
+    
+    draw(ctx) {
+        // Draw all child shapes
+        this.shapes.forEach(shape => shape.draw(ctx));
+        
+        // Draw group boundary if selected
+        if (this.selected) {
+            ctx.save();
+            ctx.strokeStyle = this.strokeColor;
+            ctx.lineWidth = this.strokeWidth;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(this.x, this.y, this.width, this.height);
+            ctx.restore();
+            
+            // Draw selection handles
+            this.drawSelectionHandles(ctx);
+        }
+    }
+    
+    drawShape(ctx) {
+        // Shapes are drawn in draw() method
+    }
+    
+    // Update child shapes when group moves
+    updateChildPositions() {
+        this.shapes.forEach(shape => {
+            shape.x = this.x + shape._groupOffsetX;
+            shape.y = this.y + shape._groupOffsetY;
+            
+            // Update connectors
+            if (shape.updateEndpoints) {
+                shape.updateEndpoints();
+            }
+        });
+    }
+    
+    containsPoint(x, y) {
+        // Check if clicking on any child shape
+        return this.shapes.some(shape => shape.containsPoint(x, y));
+    }
+    
+    toJSON() {
+        return {
+            type: 'Group',
+            id: this.id,
+            x: this.x,
+            y: this.y,
+            width: this.width,
+            height: this.height,
+            shapes: this.shapes.map(s => s.toJSON()),
+            selected: this.selected
+        };
+    }
+    
+    toSVG() {
+        let svg = `<g>\n`;
+        this.shapes.forEach(shape => {
+            svg += shape.toSVG();
+        });
+        svg += `</g>\n`;
+        return svg;
     }
 }
