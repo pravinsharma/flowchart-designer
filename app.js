@@ -8,6 +8,7 @@ class FlowchartApp {
     }
 
     init() {
+        this.setupTheme();
         this.setupToolbar();
         this.setupPalette();
         this.setupModals();
@@ -377,6 +378,13 @@ class FlowchartApp {
                 }
             }
             
+            // Theme toggle (Alt + T)
+            if (e.altKey && (e.key === 't' || e.key === 'T')) {
+                e.preventDefault();
+                const currentTheme = document.body.getAttribute('data-theme') || 'light';
+                this.setTheme(currentTheme === 'light' ? 'dark' : 'light');
+            }
+            
             // Escape
             if (e.key === 'Escape') {
                 this.canvas.selectShape(null);
@@ -388,8 +396,79 @@ class FlowchartApp {
 
     setupPropertiesPanel() {
         document.getElementById('closePropsBtn').addEventListener('click', () => {
-            document.getElementById('propertiesPanel').style.display = 'none';
+            document.getElementById('propertiesPanel').classList.remove('active');
         });
+    }
+
+    setupTheme() {
+        // Get saved theme preference or detect system preference
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        this.setTheme(savedTheme);
+
+        // Theme toggle button click handler
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeMenu = document.getElementById('themeMenu');
+        
+        themeToggleBtn.addEventListener('click', () => {
+            themeMenu.classList.toggle('active');
+        });
+
+        // Theme option click handlers
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const theme = option.dataset.theme;
+                this.setTheme(theme);
+                themeMenu.classList.remove('active');
+            });
+        });
+
+        // Close theme menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!themeToggleBtn.contains(e.target) && !themeMenu.contains(e.target)) {
+                themeMenu.classList.remove('active');
+            }
+        });
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if (localStorage.getItem('theme') === 'system') {
+                this.setTheme('system');
+            }
+        });
+    }
+
+    setTheme(theme) {
+        localStorage.setItem('theme', theme);
+        
+        // Remove existing theme class
+        document.body.removeAttribute('data-theme');
+        
+        if (theme === 'system') {
+            // Check system preference
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.body.setAttribute('data-theme', 'dark');
+                this.updateThemeIcon('dark');
+            } else {
+                document.body.setAttribute('data-theme', 'light');
+                this.updateThemeIcon('light');
+            }
+        } else {
+            document.body.setAttribute('data-theme', theme);
+            this.updateThemeIcon(theme);
+        }
+
+        // Update theme option active states
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.toggle('active', option.dataset.theme === theme);
+        });
+
+        // Redraw canvas with new theme colors
+        this.canvas.render();
+    }
+
+    updateThemeIcon(theme) {
+        const icon = document.querySelector('#themeToggleBtn i');
+        icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
     }
 
     // Update alignment buttons state based on selection
