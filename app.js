@@ -446,6 +446,48 @@ class FlowchartApp {
             palette.classList.toggle('expanded');
             localStorage.setItem('paletteExpanded', palette.classList.contains('expanded'));
         });
+
+        // Setup search functionality
+        const searchInput = document.getElementById('paletteSearch');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase().trim();
+                this.filterPaletteItems(searchTerm);
+            }, 100); // Debounce search for better performance
+        });
+
+        // Clear search on Escape key
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                searchInput.value = '';
+                this.filterPaletteItems('');
+                searchInput.blur();
+            }
+        });
+    }
+
+    filterPaletteItems(searchTerm) {
+        const sections = document.querySelectorAll('.palette-section');
+        
+        sections.forEach(section => {
+            const items = section.querySelectorAll('.shape-item');
+            let visibleItems = 0;
+            
+            items.forEach(item => {
+                const itemText = item.textContent.toLowerCase();
+                const shapeType = item.getAttribute('data-shape').toLowerCase();
+                const matches = itemText.includes(searchTerm) || shapeType.includes(searchTerm);
+                
+                item.classList.toggle('hidden', !matches);
+                if (matches) visibleItems++;
+            });
+            
+            // Hide sections with no matching items
+            section.classList.toggle('empty', visibleItems === 0);
+        });
     }
 
     setupTheme() {
