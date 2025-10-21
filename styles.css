@@ -619,6 +619,88 @@ body {
     display: flex;
     flex-direction: column;
     box-shadow: -2px 0 10px var(--shadow);
+    padding: 10px;
+}
+
+/* Property Panel Sections */
+.property-section {
+    margin-bottom: 10px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px var(--shadow);
+}
+
+.property-section h4 {
+    color: var(--text-primary);
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 8px 10px;
+    margin: 0;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.property-section h4:hover {
+    background: var(--bg-secondary);
+}
+
+.property-section h4::after {
+    content: '\f077';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 0.8em;
+    transition: transform 0.3s;
+}
+
+.property-section.collapsed h4::after {
+    transform: rotate(180deg);
+}
+
+.property-section .section-content {
+    padding: 8px 10px;
+    transition: max-height 0.28s cubic-bezier(.2,.8,.2,1);
+    max-height: 420px;
+    overflow: hidden;
+}
+
+.property-section.collapsed .section-content {
+    max-height: 0;
+    padding: 0 10px;
+}
+
+.property-group {
+    margin-bottom: 10px;
+}
+
+.property-group label {
+    display: block;
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.property-group input[type="text"],
+.property-group input[type="number"],
+.property-group select,
+.property-group textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 /* Comments Panel */
@@ -683,6 +765,98 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* Property Panel Sections */
+.property-section {
+    margin-bottom: 10px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px var(--shadow);
+}
+
+.property-section h4 {
+    color: var(--text-primary);
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 8px 10px;
+    margin: 0;
+    background: var(--bg-tertiary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.property-section h4:hover {
+    background: var(--bg-secondary);
+}
+
+.property-section h4::after {
+    content: '\f077';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 0.8em;
+    transition: transform 0.3s;
+}
+
+.property-section.collapsed h4::after {
+    transform: rotate(180deg);
+}
+
+.property-section .section-content {
+    padding: 8px 10px;
+    transition: max-height 0.28s cubic-bezier(.2,.8,.2,1);
+    max-height: 420px;
+    overflow: hidden;
+}
+
+.property-section.collapsed .section-content {
+    max-height: 0;
+    padding: 0 10px;
+}
+
+.property-group {
+    margin-bottom: 10px;
+}
+
+.property-group label {
+    display: block;
+    font-size: 0.75em;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.property-group input[type="text"],
+.property-group input[type="number"],
+.property-group select,
+.property-group textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+@keyframes slideIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Comment Items */
@@ -897,7 +1071,8 @@ body {
 .color-picker-group {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
 .color-picker {
@@ -905,13 +1080,34 @@ body {
     flex-direction: column;
 }
 
+.color-picker label {
+    font-size: 0.7em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
 .color-picker input[type="color"] {
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
-    height: 40px;
+    height: 28px;
+    padding: 2px;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
+    border-radius: 4px;
     background: var(--bg-primary);
+    cursor: pointer;
+}
+
+.color-picker input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-picker input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 2px;
 }
 
 /* Context Menu */
