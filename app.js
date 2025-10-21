@@ -430,6 +430,31 @@ class FlowchartApp {
         document.getElementById('closePropsBtn').addEventListener('click', () => {
             document.getElementById('propertiesPanel').classList.remove('active');
         });
+
+        // Handle collapsible sections in the properties panel
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.property-section h4')) {
+                const section = e.target.closest('.property-section');
+                section.classList.toggle('collapsed');
+                
+                // Store the collapsed state
+                const sectionName = e.target.textContent.trim();
+                const collapsedSections = JSON.parse(localStorage.getItem('collapsedPropSections') || '[]');
+                
+                if (section.classList.contains('collapsed')) {
+                    if (!collapsedSections.includes(sectionName)) {
+                        collapsedSections.push(sectionName);
+                    }
+                } else {
+                    const index = collapsedSections.indexOf(sectionName);
+                    if (index > -1) {
+                        collapsedSections.splice(index, 1);
+                    }
+                }
+                
+                localStorage.setItem('collapsedPropSections', JSON.stringify(collapsedSections));
+            }
+        });
     }
 
     setupPaletteToggle() {
@@ -623,72 +648,96 @@ class FlowchartApp {
         }
 
         panel.innerHTML = `
-            <div class="property-group">
-                <label>Text</label>
-                <textarea id="propText" rows="3">${shape.text || ''}</textarea>
-            </div>
-            
-            <div class="property-group">
-                <label>Font Size</label>
-                <input type="number" id="propFontSize" value="${shape.fontSize}" min="8" max="72">
-            </div>
-            
-            <div class="property-group">
-                <label>Font Family</label>
-                <select id="propFontFamily">
-                    <option value="Arial" ${shape.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
-                    <option value="Helvetica" ${shape.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
-                    <option value="Times New Roman" ${shape.fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
-                    <option value="Courier New" ${shape.fontFamily === 'Courier New' ? 'selected' : ''}>Courier New</option>
-                    <option value="Verdana" ${shape.fontFamily === 'Verdana' ? 'selected' : ''}>Verdana</option>
-                </select>
-            </div>
-            
-            <div class="color-picker-group">
-                <div class="color-picker">
-                    <label>Fill Color</label>
-                    <input type="color" id="propFillColor" value="${shape.fillColor === 'transparent' ? '#ffffff' : shape.fillColor}">
-                </div>
-                <div class="color-picker">
-                    <label>Stroke Color</label>
-                    <input type="color" id="propStrokeColor" value="${shape.strokeColor}">
+            <div class="property-section">
+                <h4>Text & Font</h4>
+                <div class="section-content">
+                    <div class="property-group">
+                        <label>Text</label>
+                        <textarea id="propText" rows="3">${shape.text || ''}</textarea>
+                    </div>
+                    <div class="property-group">
+                        <label>Font Size</label>
+                        <input type="number" id="propFontSize" value="${shape.fontSize}" min="8" max="72">
+                    </div>
+                    <div class="property-group">
+                        <label>Font Family</label>
+                        <select id="propFontFamily">
+                            <option value="Arial" ${shape.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                            <option value="Helvetica" ${shape.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                            <option value="Times New Roman" ${shape.fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
+                            <option value="Courier New" ${shape.fontFamily === 'Courier New' ? 'selected' : ''}>Courier New</option>
+                            <option value="Verdana" ${shape.fontFamily === 'Verdana' ? 'selected' : ''}>Verdana</option>
+                        </select>
+                    </div>
                 </div>
             </div>
             
-            <div class="color-picker-group">
-                <div class="color-picker">
-                    <label>Text Color</label>
-                    <input type="color" id="propTextColor" value="${shape.textColor}">
+            <div class="property-section">
+                <h4>Colors & Style</h4>
+                <div class="section-content">
+                    <div class="color-picker-group">
+                        <div class="color-picker">
+                            <label>Fill Color</label>
+                            <input type="color" id="propFillColor" value="${shape.fillColor === 'transparent' ? '#ffffff' : shape.fillColor}">
+                        </div>
+                        <div class="color-picker">
+                            <label>Stroke Color</label>
+                            <input type="color" id="propStrokeColor" value="${shape.strokeColor}">
+                        </div>
+                    </div>
+                    <div class="color-picker-group">
+                        <div class="color-picker">
+                            <label>Text Color</label>
+                            <input type="color" id="propTextColor" value="${shape.textColor}">
+                        </div>
+                        <div class="property-group">
+                            <label>Stroke Width</label>
+                            <input type="number" id="propStrokeWidth" value="${shape.strokeWidth}" min="0" max="10">
+                        </div>
+                    </div>
                 </div>
-                <div class="property-group">
-                    <label>Stroke Width</label>
-                    <input type="number" id="propStrokeWidth" value="${shape.strokeWidth}" min="0" max="10">
+            </div>
+            
+            <div class="property-section">
+                <h4>Position</h4>
+                <div class="section-content">
+                    <div class="property-group">
+                        <label>Position X</label>
+                        <input type="number" id="propX" value="${Math.round(shape.x)}">
+                    </div>
+                    <div class="property-group">
+                        <label>Position Y</label>
+                        <input type="number" id="propY" value="${Math.round(shape.y)}">
+                    </div>
                 </div>
             </div>
-            
-            <div class="property-group">
-                <label>Position X</label>
-                <input type="number" id="propX" value="${Math.round(shape.x)}">
-            </div>
-            
-            <div class="property-group">
-                <label>Position Y</label>
-                <input type="number" id="propY" value="${Math.round(shape.y)}">
-            </div>
-            
-            <div class="property-group">
-                <label>Width</label>
-                <input type="number" id="propWidth" value="${Math.round(shape.width)}" min="10">
-            </div>
-            
-            <div class="property-group">
-                <label>Height</label>
-                <input type="number" id="propHeight" value="${Math.round(shape.height)}" min="10">
+
+            <div class="property-section">
+                <h4>Size</h4>
+                <div class="section-content">
+                    <div class="property-group">
+                        <label>Width</label>
+                        <input type="number" id="propWidth" value="${Math.round(shape.width)}" min="10">
+                    </div>
+                    <div class="property-group">
+                        <label>Height</label>
+                        <input type="number" id="propHeight" value="${Math.round(shape.height)}" min="10">
+                    </div>
+                </div>
             </div>
         `;
 
         // Add event listeners for property changes
         this.attachPropertyListeners(shape);
+
+        // Restore collapsed state for sections
+        const collapsedSections = JSON.parse(localStorage.getItem('collapsedPropSections') || '[]');
+        document.querySelectorAll('.property-section').forEach(section => {
+            const sectionName = section.querySelector('h4').textContent.trim();
+            if (collapsedSections.includes(sectionName)) {
+                section.classList.add('collapsed');
+            }
+        });
     }
 
     attachPropertyListeners(shape) {

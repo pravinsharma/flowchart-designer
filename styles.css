@@ -613,7 +613,7 @@ body {
 
 /* Properties Panel */
 .properties-panel {
-    width: 280px;
+    width: 240px; /* Reduced from 280px */
     background: var(--bg-secondary);
     border-left: 1px solid var(--border);
     display: flex;
@@ -782,43 +782,51 @@ body {
 }
 
 .properties-header {
-    padding: 15px 20px;
-    border-bottom: 2px solid var(--border);
+    color: var(--text-primary);
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 8px 10px;
+    margin: 0;
     background: var(--bg-tertiary);
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: background 0.15s;
 }
 
 .properties-header h3 {
     color: var(--text-primary);
-    font-size: 1.1em;
+    font-size: 1em;
+    font-weight: 600;
+    margin: 0;
 }
 
 .close-btn {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 16px;
     color: var(--text-secondary);
     cursor: pointer;
-    width: 30px;
-    height: 30px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: 4px;
     transition: all 0.2s;
 }
 
 .close-btn:hover {
-    background: var(--bg-primary);
+    background: var(--bg-secondary);
     color: var(--text-primary);
 }
 
 .properties-content {
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 8px 10px;
 }
 
 .no-selection {
@@ -834,17 +842,23 @@ body {
 }
 
 .property-group {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px var(--shadow);
 }
 
 .property-group label {
     display: block;
-    font-size: 0.85em;
+    font-size: 0.75em;
     font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 8px;
+    color: var(--text-primary);
+    padding: 8px 10px;
+    margin: 0;
+    background: var(--bg-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
 }
 
 .property-group input[type="text"],
@@ -852,13 +866,18 @@ body {
 .property-group select,
 .property-group textarea {
     width: 100%;
-    padding: 8px 12px;
+    padding: 8px 10px;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    margin: 8px 0;
     transition: all 0.2s;
     background: var(--bg-primary);
     color: var(--text-primary);
+}
+
+.property-group .group-content {
+    padding: 8px 10px;
 }
 
 .property-group input:focus,
@@ -866,12 +885,12 @@ body {
 .property-group textarea:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--highlight);
+    box-shadow: 0 0 0 2px var(--highlight);
 }
 
 .property-group textarea {
     resize: vertical;
-    min-height: 80px;
+    min-height: 60px;
     font-family: inherit;
 }
 
@@ -1114,7 +1133,7 @@ body {
     }
     
     .properties-panel {
-        width: 240px;
+        width: 220px; /* Reduced from 240px for smaller screens */
     }
     
     .header-left h1 {
