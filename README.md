@@ -332,7 +332,7 @@ if (e.key === 'your-key') {
 - [ ] Shape library expansion
 - [ ] Themes (dark mode)
 - [ ] Layers panel
-- [ ] Comments and annotations
+- [x] Comments and annotations
 
 ## Troubleshooting
 
