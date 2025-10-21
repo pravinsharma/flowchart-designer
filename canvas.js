@@ -170,14 +170,38 @@ class FlowchartCanvas {
                     // Start dragging if shape is selected
                     if (clickedShape.selected) {
                         this.isDragging = true;
+                        
+                        // Store mouse position relative to each shape before any duplication
                         this.dragStartX = pos.x - clickedShape.x;
                         this.dragStartY = pos.y - clickedShape.y;
-                        
-                        // Store initial positions for all selected shapes
                         this.selectedShapes.forEach(shape => {
                             shape._dragOffsetX = pos.x - shape.x;
                             shape._dragOffsetY = pos.y - shape.y;
                         });
+                        
+                        // Check for Alt key to duplicate
+                        if (e.altKey) {
+                            // Duplicate all selected shapes
+                            const newShapes = [];
+                            this.selectedShapes.forEach(s => {
+                                const json = s.toJSON();
+                                json.id = Date.now() + Math.random();
+                                const newShape = this.shapeFromJSON(json);
+                                this.shapes.push(newShape);
+                                newShapes.push(newShape);
+                                
+                                // Copy the drag offsets to the new shape
+                                newShape._dragOffsetX = s._dragOffsetX;
+                                newShape._dragOffsetY = s._dragOffsetY;
+                            });
+                            
+                            // Select the duplicated shapes
+                            this.selectedShapes.forEach(s => s.selected = false);
+                            this.selectedShapes = newShapes;
+                            newShapes.forEach(s => s.selected = true);
+                            this.selectedShape = newShapes[0];
+                            clickedShape = this.selectedShape;
+                        }
                     }
                 }
             } else {
