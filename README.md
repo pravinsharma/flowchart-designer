@@ -319,8 +319,8 @@ if (e.key === 'your-key') {
 - [x] Multi-select with Shift+Click
 - [x] Box select (drag rectangle to select multiple)
 - [ ] Shape grouping and ungrouping
-- [ ] Alignment tools (align left, center, right, etc.)
-- [ ] Distribution tools (space evenly)
+- [x] Alignment tools (align left, center, right, etc.)
+- [x] Distribution tools (space evenly)
 - [x] Grid snapping and guidelines
 - [x] Smart connectors that attach to shapes
 - [ ] Auto-routing for connectors (path finding)
