@@ -462,6 +462,13 @@ class FlowchartApp {
             option.classList.toggle('active', option.dataset.theme === theme);
         });
 
+        // Update connector colors
+        this.canvas.shapes.forEach(shape => {
+            if (shape instanceof Arrow || shape instanceof Line) {
+                shape.updateThemeColor();
+            }
+        });
+
         // Redraw canvas with new theme colors
         this.canvas.render();
     }

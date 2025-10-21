@@ -481,6 +481,15 @@ class Database extends Shape {
 }
 
 class Arrow extends Shape {
+    static updateThemeColors() {
+        const isDarkTheme = document.body.getAttribute('data-theme') === 'dark';
+        return isDarkTheme ? '#ffffff' : '#333333';
+    }
+
+    updateThemeColor() {
+        this.strokeColor = Arrow.updateThemeColors();
+    }
+
     constructor(x1, y1, x2, y2) {
         super(Math.min(x1, x2), Math.min(y1, y2), 
               Math.abs(x2 - x1), Math.abs(y2 - y1));
@@ -489,6 +498,10 @@ class Arrow extends Shape {
         this.x2 = x2;
         this.y2 = y2;
         this.fillColor = 'transparent';
+        
+        // Set connector color based on theme
+        const isDarkTheme = document.body.getAttribute('data-theme') === 'dark';
+        this.strokeColor = isDarkTheme ? '#ffffff' : '#333333';
         // Store initial offset for proper movement
         this._offsetX1 = x1 - this.x;
         this._offsetY1 = y1 - this.y;
@@ -755,6 +768,11 @@ class Arrow extends Shape {
 }
 
 class Line extends Arrow {
+    constructor(x1, y1, x2, y2) {
+        super(x1, y1, x2, y2);
+        this.updateThemeColor();
+    }
+
     drawShape(ctx) {
         ctx.beginPath();
         ctx.moveTo(this.x1, this.y1);
