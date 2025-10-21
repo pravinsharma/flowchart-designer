@@ -75,6 +75,31 @@ body {
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
 }
 
+/* Alignment buttons */
+#alignLeftBtn,
+#alignCenterBtn,
+#alignRightBtn,
+#alignTopBtn,
+#alignMiddleBtn,
+#alignBottomBtn,
+#distributeHBtn,
+#distributeVBtn {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+#alignLeftBtn.enabled,
+#alignCenterBtn.enabled,
+#alignRightBtn.enabled,
+#alignTopBtn.enabled,
+#alignMiddleBtn.enabled,
+#alignBottomBtn.enabled,
+#distributeHBtn.enabled,
+#distributeVBtn.enabled {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .separator {
     width: 1px;
     height: 24px;

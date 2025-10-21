@@ -1949,4 +1949,113 @@ class FlowchartCanvas {
         this.updateZoomDisplay();
         this.updatePropertiesPanel();
     }
+
+    // Alignment functions
+    alignShapes(alignment) {
+        if (this.selectedShapes.length < 2) return;
+
+        // Filter out connectors from alignment operations
+        const alignableShapes = this.selectedShapes.filter(
+            shape => !(shape instanceof Arrow || shape instanceof Line)
+        );
+
+        if (alignableShapes.length < 2) return;
+
+        // Get bounds of all selected shapes
+        const bounds = this.getSelectionBounds(alignableShapes);
+
+        switch (alignment) {
+            case 'left':
+                alignableShapes.forEach(shape => {
+                    shape.x = bounds.minX;
+                    if (shape instanceof Group) shape.updateChildPositions();
+                });
+                break;
+
+            case 'center':
+                const centerX = bounds.minX + (bounds.maxX - bounds.minX) / 2;
+                alignableShapes.forEach(shape => {
+                    shape.x = centerX - shape.width / 2;
+                    if (shape instanceof Group) shape.updateChildPositions();
+                });
+                break;
+
+            case 'right':
+                alignableShapes.forEach(shape => {
+                    shape.x = bounds.maxX - shape.width;
+                    if (shape instanceof Group) shape.updateChildPositions();
+                });
+                break;
+
+            case 'top':
+                alignableShapes.forEach(shape => {
+                    shape.y = bounds.minY;
+                    if (shape instanceof Group) shape.updateChildPositions();
+                });
+                break;
+
+            case 'middle':
+                const centerY = bounds.minY + (bounds.maxY - bounds.minY) / 2;
+                alignableShapes.forEach(shape => {
+                    shape.y = centerY - shape.height / 2;
+                    if (shape instanceof Group) shape.updateChildPositions();
+                });
+                break;
+
+            case 'bottom':
+                alignableShapes.forEach(shape => {
+                    shape.y = bounds.maxY - shape.height;
+                    if (shape instanceof Group) shape.updateChildPositions();
+                });
+                break;
+
+            case 'distribute-horizontal':
+                if (alignableShapes.length < 3) return;
+                // Sort shapes by x position
+                const sortedX = [...alignableShapes].sort((a, b) => a.x - b.x);
+                const totalWidthSpace = bounds.maxX - bounds.minX;
+                const spacing = totalWidthSpace / (sortedX.length - 1);
+                // Keep first and last shapes in place
+                for (let i = 1; i < sortedX.length - 1; i++) {
+                    sortedX[i].x = bounds.minX + spacing * i;
+                    if (sortedX[i] instanceof Group) sortedX[i].updateChildPositions();
+                }
+                break;
+
+            case 'distribute-vertical':
+                if (alignableShapes.length < 3) return;
+                // Sort shapes by y position
+                const sortedY = [...alignableShapes].sort((a, b) => a.y - b.y);
+                const totalHeightSpace = bounds.maxY - bounds.minY;
+                const spacingY = totalHeightSpace / (sortedY.length - 1);
+                // Keep first and last shapes in place
+                for (let i = 1; i < sortedY.length - 1; i++) {
+                    sortedY[i].y = bounds.minY + spacingY * i;
+                    if (sortedY[i] instanceof Group) sortedY[i].updateChildPositions();
+                }
+                break;
+        }
+
+        // Update all connector connections
+        this.updateAllConnections();
+        this.saveState();
+        this.render();
+    }
+
+    // Helper function to get bounds of selected shapes
+    getSelectionBounds(shapes = this.selectedShapes) {
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        shapes.forEach(shape => {
+            minX = Math.min(minX, shape.x);
+            minY = Math.min(minY, shape.y);
+            maxX = Math.max(maxX, shape.x + shape.width);
+            maxY = Math.max(maxY, shape.y + shape.height);
+        });
+
+        return { minX, minY, maxX, maxY };
+    }
 }

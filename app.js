@@ -78,6 +78,39 @@ class FlowchartApp {
             this.canvas.ungroupShapes();
         });
 
+        // Alignment buttons
+        document.getElementById('alignLeftBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('left');
+        });
+
+        document.getElementById('alignCenterBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('center');
+        });
+
+        document.getElementById('alignRightBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('right');
+        });
+
+        document.getElementById('alignTopBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('top');
+        });
+
+        document.getElementById('alignMiddleBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('middle');
+        });
+
+        document.getElementById('alignBottomBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('bottom');
+        });
+
+        document.getElementById('distributeHBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('distribute-horizontal');
+        });
+
+        document.getElementById('distributeVBtn').addEventListener('click', () => {
+            this.canvas.alignShapes('distribute-vertical');
+        });
+
         // Delete and Clear
         document.getElementById('deleteBtn').addEventListener('click', () => {
             this.canvas.deleteSelected();
@@ -313,6 +346,37 @@ class FlowchartApp {
                 }
             }
             
+            // Alignment shortcuts (using Alt key)
+            if (e.altKey) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.canvas.alignShapes('left');
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    this.canvas.alignShapes('right');
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.canvas.alignShapes('top');
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.canvas.alignShapes('bottom');
+                } else if (e.key === 'h' || e.key === 'H') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        this.canvas.alignShapes('distribute-horizontal');
+                    } else {
+                        this.canvas.alignShapes('center');
+                    }
+                } else if (e.key === 'v' || e.key === 'V') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        this.canvas.alignShapes('distribute-vertical');
+                    } else {
+                        this.canvas.alignShapes('middle');
+                    }
+                }
+            }
+            
             // Escape
             if (e.key === 'Escape') {
                 this.canvas.selectShape(null);
@@ -328,8 +392,35 @@ class FlowchartApp {
         });
     }
 
+    // Update alignment buttons state based on selection
+    updateAlignmentButtons() {
+        // Get count of alignable shapes (excluding connectors)
+        const alignableCount = this.canvas.selectedShapes.filter(
+            shape => !(shape instanceof Arrow || shape instanceof Line)
+        ).length;
+
+        // Enable/disable buttons based on selection count
+        const alignButtons = [
+            'alignLeftBtn', 'alignCenterBtn', 'alignRightBtn',
+            'alignTopBtn', 'alignMiddleBtn', 'alignBottomBtn'
+        ];
+        
+        alignButtons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            btn.classList.toggle('enabled', alignableCount >= 2);
+        });
+
+        // Distribution buttons require at least 3 shapes
+        const distributeButtons = ['distributeHBtn', 'distributeVBtn'];
+        distributeButtons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            btn.classList.toggle('enabled', alignableCount >= 3);
+        });
+    }
+
     updatePropertiesPanel(shape) {
         const panel = document.getElementById('propertiesContent');
+        this.updateAlignmentButtons();
         
         // Show multi-select info if multiple shapes selected
         if (this.canvas.selectedShapes.length > 1) {
