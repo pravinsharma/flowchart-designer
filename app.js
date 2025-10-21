@@ -619,7 +619,23 @@ class FlowchartApp {
         updateProperty('propFontSize', 'fontSize', true);
         updateProperty('propFontFamily', 'fontFamily');
         updateProperty('propFillColor', 'fillColor');
-        updateProperty('propStrokeColor', 'strokeColor');
+        
+        // Special handling for stroke color to use setStrokeColor method
+        const strokeColorInput = document.getElementById('propStrokeColor');
+        if (strokeColorInput) {
+            strokeColorInput.addEventListener('input', (e) => {
+                if (shape.setStrokeColor) {
+                    shape.setStrokeColor(e.target.value);
+                } else {
+                    shape.strokeColor = e.target.value;
+                }
+                this.canvas.render();
+            });
+            strokeColorInput.addEventListener('change', () => {
+                this.canvas.saveState();
+            });
+        }
+        
         updateProperty('propTextColor', 'textColor');
         updateProperty('propStrokeWidth', 'strokeWidth', true);
         updateProperty('propX', 'x', true);

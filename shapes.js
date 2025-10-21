@@ -487,7 +487,18 @@ class Arrow extends Shape {
     }
 
     updateThemeColor() {
-        this.strokeColor = Arrow.updateThemeColors();
+        // Only update color if it hasn't been customized
+        if (!this.isCustomColor) {
+            this.strokeColor = Arrow.updateThemeColors();
+        }
+    }
+
+    // Override shape's setStrokeColor method to track customization
+    setStrokeColor(color) {
+        if (color !== Arrow.updateThemeColors()) {
+            this.isCustomColor = true;
+        }
+        this.strokeColor = color;
     }
 
     constructor(x1, y1, x2, y2) {
@@ -498,6 +509,7 @@ class Arrow extends Shape {
         this.x2 = x2;
         this.y2 = y2;
         this.fillColor = 'transparent';
+        this.isCustomColor = false;  // Track if color has been customized
         
         // Set connector color based on theme
         const isDarkTheme = document.body.getAttribute('data-theme') === 'dark';
@@ -733,6 +745,7 @@ class Arrow extends Shape {
         json.startConnection = this.startConnection;
         json.endConnection = this.endConnection;
         json.waypoints = this.waypoints;
+        json.isCustomColor = this.isCustomColor;
         return json;
     }
     
